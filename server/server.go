@@ -1,24 +1,16 @@
 package server
 
 import (
-	"bytes"
 	"database/sql"
-	"encoding/json"
-	"errors"
 	"fmt"
-	"io"
-	"io/ioutil"
 	"log"
 	"net/http"
 	"os"
-	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/nlopes/slack"
 	"github.com/robfig/cron"
-	"github.com/yhat/scrape"
-	"golang.org/x/net/html"
 
 	_ "github.com/lib/pq"
 )
@@ -106,7 +98,8 @@ func RegisterCronJob(api *slack.Client, db *sql.DB) {
 func runCronPost(api *slack.Client, db *sql.DB) {
 	users := GetUsers(db, api)
 	for _, user := range users {
-		go menuPost(user.MuncherySession, api, user.ChannelID)
+		user = user
+		//go menuPost(user.MuncherySession, api, user.ChannelID)
 	}
 }
 
@@ -191,7 +184,7 @@ func Respond(api *slack.Client, atBot string) {
 								api.PostMessage(ev.Channel, "Sorry, didn't understand your order, format is `order 1, 2, 4`", params)
 							} else {
 								api.PostMessage(ev.Channel, "Hey we registered your order. It should arrive at around 6pm... sending you a confirmation email!", params)
-								user := GetUser(pg, ev.Channel)
+								//user := GetUser(pg, ev.Channel)
 								//addToBasket(user.MuncherySession, ids)
 								//checkout(user.MuncherySession)
 							}
@@ -208,7 +201,7 @@ func Respond(api *slack.Client, atBot string) {
 								api.PostMessage(ev.Channel, "Sorry, the munchery token `"+muncherySessionID+"` was not valid", params)
 								break
 							}
-							if !checkConnection(muncherySessionID) {
+							if true {
 								api.PostMessage(ev.Channel, "Sorry, the munchery token `"+muncherySessionID+"` was not valid", params)
 							} else {
 								api.PostMessage(ev.Channel, "Perfect, registering you with @munchbot -- to make an order type `menu` or `order`", params)
