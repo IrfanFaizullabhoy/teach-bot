@@ -7,22 +7,28 @@ services:
     ports:
        - "5432:5432"
     environment:
-      - POSTGRES_PASSWORD=munch
-      - POSTGRES_USER=munch
-      - POSTGRES_DB=usertokens
-    restart: always
+      - POSTGRES_PASSWORD=teachpass
+      - POSTGRES_USER=teach
+      - POSTGRES_DB=usersdev
 
-  munch-server:
-    build: .
+  server:
+    build:
+      context: .
+      dockerfile: server/Dockerfile
     ports:
-      - "127.0.0.1:8080:8080"
+      - "8080:8080"
     depends_on:
       - db
     links:
       - db
     environment:
+      - POSTGRES_PASSWORD=teachpass
+      - POSTGRES_USER=teach
       - DB_PORT_5432_TCP_ADDR=db
-      - POSTGRES_PASSWORD=munch
-      - POSTGRES_USER=munch
-      - SLACK_TOKEN=${SLACK_TOKEN}
+      - DB_NAME=usersdev
+      - DB_USER=teach
+      - DB_PASS=teachpass
+      - DB_SERVICE=db
+      - DB_PORT=5432
+      - SLACK_TOKEN=xoxb-136568950452-8X180knozh1mI8hYPXqzYDZR
     restart: always

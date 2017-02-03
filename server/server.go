@@ -1,4 +1,4 @@
-package server
+package main
 
 import (
 	"database/sql"
@@ -18,24 +18,8 @@ import (
 var RegisteredChannels []string
 var pg *sql.DB
 
-func ConnectToPG(dbName string) *sql.DB {
-	db, err := sql.Open("postgres", "postgres://teach:teach@"+os.Getenv("DB_PORT_5432_TCP_ADDR")+"/usertokens?sslmode=disable")
-	if err != nil {
-		log.Fatal(err)
-	}
-	return db
-}
-
 func SetupTable(db *sql.DB, tableName string) {
 	_, err := db.Exec("CREATE TABLE users (channel text PRIMARY KEY, session text)")
-	if err != nil {
-		log.Printf("Error inserting into DB: %+v", err)
-		return
-	}
-}
-
-func RegisterUserToDB(db *sql.DB, user *User) {
-	_, err := db.Exec("INSERT INTO users(channel,session) VALUES($1,$2) ON CONFLICT (channel) DO UPDATE SET (channel, session) = ($1, $2)", user.ChannelID, user.MuncherySession)
 	if err != nil {
 		log.Printf("Error inserting into DB: %+v", err)
 		return
@@ -64,11 +48,6 @@ func GetUsers(db *sql.DB, api *slack.Client) (users []*User) {
 		}
 	}
 	return users
-}
-
-type User struct {
-	ChannelID       string
-	MuncherySession string
 }
 
 func ChannelExists(channelName string) bool {
@@ -104,13 +83,12 @@ func runCronPost(api *slack.Client, db *sql.DB) {
 }
 
 func Run() {
-	//muncherySession := os.Getenv("MUNCHERY_SESSION")
 	api := ConnectToSlack()
+	fmt.Println("connected to slack")
 	RegisterChannels(api)
-	pg = ConnectToPG("usertokens")
-	SetupTable(pg, "users")
-	SendTestMessage(api, "#intern-hackathon", "Just listening in...")
-	atMB := GetAtMunchBotId(api)
+	fmt.Println("registered channels")
+	SendTestMessage(api, "#teacher-test", "Here to help...")
+	atMB := GetAtTeachId(api)
 	RegisterCronJob(api, pg)
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -127,14 +105,14 @@ func ConnectToSlack() *slack.Client {
 	return api
 }
 
-func GetAtMunchBotId(api *slack.Client) string {
+func GetAtTeachId(api *slack.Client) string {
 	users, _ := api.GetUsers()
 	for _, user := range users {
-		if user.IsBot && user.Name == "munchbot" {
+		if user.IsBot && user.Name == "teach" {
 			return "<@" + user.ID + ">"
 		}
 	}
-	return "Couldn't find munchbot"
+	return "Couldn't find teach"
 }
 
 func SendTestMessage(api *slack.Client, channelName string, messageText string) {
@@ -163,13 +141,13 @@ func Respond(api *slack.Client, atBot string) {
 					/* --------------- MENU CONVERSATION ---------------*/
 					case strings.Contains(strings.ToLower(ev.Text), "menu") && !strings.Contains(strings.ToLower(ev.Text), "register"):
 						if !ChannelExists(ev.Channel) {
-							api.PostMessage(ev.Channel, "Please speak with `@munchbot` in your direct message channel with `@munchbot`", params)
+							api.PostMessage(ev.Channel, "Please speak with `@teach-bot` in your direct message channel with `teach-bot`", params)
 						} else {
 							user := GetUser(pg, ev.Channel)
 							if user == nil {
-								api.PostMessage(ev.Channel, "Hi, to use `@munchbot` type `register {munchery_cookie}` then `menu` to see the Munchery Menu of the day, followed by `order {menu item ids separated by comma}`", params)
+								api.PostMessage(ev.Channel, "Hi", params)
 							} else {
-								api.PostMessage(ev.Channel, "Hey! Here's the menu:", params)
+								api.PostMessage(ev.Channel, "Hey", params)
 								//menuPost(user.MuncherySession, api, ev.Channel)
 							}
 						}
@@ -177,13 +155,13 @@ func Respond(api *slack.Client, atBot string) {
 					/* --------------- ORDER CONVERSATION ---------------*/
 					case strings.Contains(strings.ToLower(ev.Text), "order") && !strings.Contains(strings.ToLower(ev.Text), "register"):
 						if !ChannelExists(ev.Channel) {
-							api.PostMessage(ev.Channel, "Please speak with `@munchbot` in your direct message channel with `@munchbot`", params)
+							api.PostMessage(ev.Channel, "Please speak with `@teach-bot` in your direct message channel with `@teach-bot`", params)
 						} else {
 							ids, parseError := ParseOrder(ev.Text)
 							if ids == nil || parseError {
-								api.PostMessage(ev.Channel, "Sorry, didn't understand your order, format is `order 1, 2, 4`", params)
+								api.PostMessage(ev.Channel, "Sorry, didn't understand `", params)
 							} else {
-								api.PostMessage(ev.Channel, "Hey we registered your order. It should arrive at around 6pm... sending you a confirmation email!", params)
+								api.PostMessage(ev.Channel, "Hi", params)
 								//user := GetUser(pg, ev.Channel)
 								//addToBasket(user.MuncherySession, ids)
 								//checkout(user.MuncherySession)
@@ -194,21 +172,21 @@ func Respond(api *slack.Client, atBot string) {
 					case strings.Contains(strings.ToLower(ev.Text), "register"):
 						if !ChannelExists(ev.Channel) {
 							params := slack.PostMessageParameters{}
-							api.PostMessage(ev.Channel, "You must register in the private channel with @munchbot", params)
+							api.PostMessage(ev.Channel, "Yes", params)
 						} else {
 							muncherySessionID, skip := ParseRegistration(ev.Text, api, ev.Channel) // TODO
 							if skip {
-								api.PostMessage(ev.Channel, "Sorry, the munchery token `"+muncherySessionID+"` was not valid", params)
+								api.PostMessage(ev.Channel, "Sorry`"+muncherySessionID+"` was not valid", params)
 								break
 							}
 							if true {
-								api.PostMessage(ev.Channel, "Sorry, the munchery token `"+muncherySessionID+"` was not valid", params)
+								api.PostMessage(ev.Channel, "Sorry`"+muncherySessionID+"` was not valid", params)
 							} else {
-								api.PostMessage(ev.Channel, "Perfect, registering you with @munchbot -- to make an order type `menu` or `order`", params)
+								api.PostMessage(ev.Channel, "Perfect", params)
 								user := new(User)
 								user.ChannelID = ev.Channel
 								//user.MuncherySession = muncherySessionID
-								RegisterUserToDB(pg, user)
+								//RegisterUserToDB(pg, user)
 							}
 						}
 
@@ -216,10 +194,10 @@ func Respond(api *slack.Client, atBot string) {
 					default:
 						if !ChannelExists(ev.Channel) {
 							params := slack.PostMessageParameters{}
-							api.PostMessage(ev.Channel, "You must register in the private channel with @munchbot", params)
+							api.PostMessage(ev.Channel, "You must register", params)
 						} else {
 							params := slack.PostMessageParameters{}
-							api.PostMessage(ev.Channel, "Hi, to use `@munchbot` type `register {munchery_cookie}` then `menu` to see the Munchery Menu of the day, followed by `order {menu item ids separated by comma}`", params)
+							api.PostMessage(ev.Channel, "Hi", params)
 						}
 					}
 				}
@@ -237,11 +215,11 @@ func ParseRegistration(messageBody string, api *slack.Client, channel string) (s
 	params := slack.PostMessageParameters{}
 	registrationText := strings.Split(messageBody, " ")
 	if len(registrationText) < 2 {
-		api.PostMessage(channel, "Looks like you didn't get the format right... to register type `@munchbot register {MUNCHERY_COOKIE}", params)
+		api.PostMessage(channel, "Looks", params)
 		return "", false
 	}
 	if strings.ToLower(registrationText[0]) != "register" {
-		api.PostMessage(channel, "Looks like you didn't get the format right... to register type `@munchbot register {MUNCHERY_COOKIE}", params)
+		api.PostMessage(channel, "Looks", params)
 		return "", true
 	}
 	var token string
