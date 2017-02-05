@@ -20,12 +20,12 @@ func ConnectToPG() *gorm.DB {
 }
 
 func SetupDB(db *gorm.DB) {
-	db.AutoMigrate(&User{})
+	db.AutoMigrate(&Student{}, &Teacher{})
 }
 
-func CreateUser(user User, db *gorm.DB) {
-	if db.NewRecord(&user) {
-		db.Create(&user)
+func CreateStudent(student Student, db *gorm.DB) {
+	if db.NewRecord(&student) {
+		db.Create(&student)
 	} else {
 		fmt.Println("error, primary key already exists for user")
 	}

@@ -8,7 +8,7 @@ import (
 	//"fmt"
 )
 
-// Takes in an email and password, returns User Object
+// Takes in an email and password, returns Student Object
 func Login(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -31,26 +31,26 @@ func Login(w http.ResponseWriter, r *http.Request) {
 	check(err)
 	hashedPassword := string(hash(login.Password))
 
-	var user User
-	db.Where("email = ?", login.Email).First(&user)
-	if hashedPassword == user.HashedPassword {
+	var Student Student
+	db.Where("email = ?", login.Email).First(&Student)
+	if hashedPassword == Student.HashedPassword {
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(user); err != nil {
+		if err := json.NewEncoder(w).Encode(Student); err != nil {
 			panic(err)
 		}
 	} else { // login failed
 		w.WriteHeader(http.StatusOK)
 	}
 	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(user); err != nil {
+	if err := json.NewEncoder(w).Encode(Student); err != nil {
 		panic(err)
 	}
 }
 
-// Takes in a User object and adds it to the Database
+// Takes in a Student object and adds it to the Database
 func SignUp(w http.ResponseWriter, r *http.Request) {
 
-	var user User
+	var Student Student
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	if origin := r.Header.Get("Origin"); origin != "" {
@@ -67,18 +67,16 @@ func SignUp(w http.ResponseWriter, r *http.Request) {
 
 	body, err := ioutil.ReadAll(r.Body)
 	check(err)
-	if err = json.Unmarshal(body, &user); err != nil {
+	if err = json.Unmarshal(body, &Student); err != nil {
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(422) // unprocessable entity
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
 	}
-	// DATABASE CODE //
 
-	CreateUser(user, db)
+	//CreateStudent(Student, db)
 
-	// END OF DATABASE CODE //
 	w.WriteHeader(http.StatusOK)
 	//if err := json.NewEncoder(w).Encode(); err != nil {
 	//	panic(err)
