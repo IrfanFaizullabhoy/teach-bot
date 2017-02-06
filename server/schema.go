@@ -11,7 +11,7 @@ type Student struct {
 	LastName       string `json:"last_name"`
 	Email          string `json:"email"`
 	UserName       string `json:"username"`
-	UserID         string `json:"user_id"`
+	UserID         string `gorm:"unique", json:"user_id"`
 	HashedPassword string `json:"hashed_password"`
 	ChannelID      string `json:"channel_id"`
 }
@@ -21,7 +21,7 @@ type Teacher struct {
 	FirstName      string `json:"first_name"`
 	LastName       string `json:"last_name"`
 	UserName       string `json:"username"`
-	UserID         string `json:"user_id"`
+	UserID         string `gorm:"unique", json:"user_id"`
 	Email          string `json:"email"`
 	HashedPassword string `json:"hashed_password"`
 	ChannelID      string `json:"channel_id"`

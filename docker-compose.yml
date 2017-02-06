@@ -21,6 +21,8 @@ services:
       - db
     links:
       - db
+    volumes: 
+      - ./mounted-volume:/mounted-volume
     environment:
       - POSTGRES_PASSWORD=teachpass
       - POSTGRES_USER=teach

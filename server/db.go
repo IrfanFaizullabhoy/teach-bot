@@ -30,3 +30,11 @@ func CreateStudent(student Student, db *gorm.DB) {
 		fmt.Println("error, primary key already exists for user")
 	}
 }
+
+func CreateTeacher(teacher Teacher, db *gorm.DB) {
+	if db.NewRecord(&teacher) {
+		db.Create(&teacher)
+	} else {
+		fmt.Println("error, primary key already exists for user")
+	}
+}
