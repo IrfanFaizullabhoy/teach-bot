@@ -19,3 +19,9 @@ func ParseAssignment(userInput string) string {
 func ParseDate(dateString string) string {
 	return "date"
 }
+
+// func DownloadPDF()
+
+// func getStudentChannels()
+
+// func Assign(file, channels, due date)

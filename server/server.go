@@ -129,13 +129,15 @@ func Respond(api *slack.Client, atBot string) {
 							params := slack.PostMessageParameters{}
 							api.PostMessage(ev.Channel, "Please register with `@teach-bot` in your direct message channel with `teach-bot`", params)
 						} else {
-							// get PDF
-							//Parse assignment
 							api.PostMessage(ev.Channel, strconv.Itoa(ev.File.Size), params)
 							client := &http.Client{}
 							req, _ := http.NewRequest("GET", ev.File.URLPrivate, nil)
 							req.Header.Add("Authorization", "Bearer xoxb-136568950452-8X180knozh1mI8hYPXqzYDZR")
 							response, err := client.Do(req)
+
+							if err != nil {
+								panic("Request making error")
+							}
 
 							if response.StatusCode != 200 {
 								fmt.Println("download error")
@@ -145,16 +147,13 @@ func Respond(api *slack.Client, atBot string) {
 							api.PostMessage(ev.Channel, response.Status, params)
 
 							defer response.Body.Close()
-							if err != nil {
-								panic("false alarm")
-							}
 							file := ev.File
 							filePath := "/mounted-volume/" + file.Name
 							tmpfile, err1 := os.Create(filePath)
 							defer tmpfile.Close()
 
 							if err1 != nil {
-								panic("false alarm 2")
+								panic("error creating the file")
 							}
 							file_content, err := ioutil.ReadAll(response.Body)
 							if err != nil {
