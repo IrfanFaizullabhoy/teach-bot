@@ -45,4 +45,10 @@ var routes = Routes{
 		"/signup",
 		SignUp,
 	},
+	Route{
+		"Instructors",
+		"POST",
+		"/instructors",
+		Instructors,
+	},
 }

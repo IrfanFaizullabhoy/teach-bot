@@ -13,7 +13,6 @@ import (
 var db *gorm.DB
 
 func main() {
-
 	router := NewRouter()
 	//time.Sleep(time.Second * 10)
 	fmt.Println("starting to connect to DB...")
@@ -21,6 +20,6 @@ func main() {
 	fmt.Println("intermediate check")
 	SetupDB(db)
 	fmt.Println("connected")
-	Run()
+	go Run()
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

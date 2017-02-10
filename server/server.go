@@ -2,14 +2,16 @@ package main
 
 import (
 	"database/sql"
+	"encoding/json"
 	"fmt"
+	//"github.com/jinzhu/gorm"
+	"github.com/nlopes/slack"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"strconv"
 	"strings"
-
-	"github.com/nlopes/slack"
 
 	_ "github.com/lib/pq"
 )
@@ -69,6 +71,62 @@ func PostAnonymousQuestion(api *slack.Client, channelName string, messageText st
 		fmt.Printf("%s\n", err)
 		return
 	}
+}
+
+func StartInstructorConversation(userID string) {
+	//instructorIDs := GetInstructorIDs(db) //implement this
+	apiUrl := "https://slack.com"
+	resource := "/api/groups.create"
+	data := url.Values{}
+	userID = "U42D42KLG"
+	data.Set("token", "xoxp-135270668007-134513633107-139843303798-8a4a0f1918cd7cd754a65f3540777d95")
+	data.Add("name", "testing-the-autocreate")
+
+	u, _ := url.ParseRequestURI(apiUrl)
+	u.Path = resource
+	u.RawQuery = data.Encode()
+	urlStr := fmt.Sprintf("%v", u) // "https://api.com/user/?name=foo&surname=bar"
+
+	client := &http.Client{}
+	r, _ := http.NewRequest("POST", urlStr, nil)
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	resp, _ := client.Do(r)
+
+	var groupCreateResponse GroupCreateResponse
+	body, err := ioutil.ReadAll(resp.Body)
+	check(err)
+	if err := json.Unmarshal(body, &groupCreateResponse); err != nil {
+		panic(err)
+	}
+
+	groupID := groupCreateResponse.Group.ID
+	instructors := []string{"U3YKBAK1S", "U42EVJF7E", "U3YK6EPV0", userID}
+	for _, instructorID := range instructors {
+		InviteInstructorToPrivateChannel(groupID, instructorID)
+	}
+}
+
+func InviteInstructorToPrivateChannel(channelID, instructorID string) {
+	apiUrl := "https://slack.com"
+	resource := "/api/groups.invite"
+	data := url.Values{}
+	data.Set("token", "xoxp-135270668007-134513633107-139843303798-8a4a0f1918cd7cd754a65f3540777d95")
+	data.Add("channel", channelID)
+	data.Add("user", instructorID)
+
+	u, _ := url.ParseRequestURI(apiUrl)
+	u.Path = resource
+	u.RawQuery = data.Encode()
+	urlStr := fmt.Sprintf("%v", u) // "https://api.com/user/?name=foo&surname=bar"
+
+	client := &http.Client{}
+	r, _ := http.NewRequest("POST", urlStr, nil)
+	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
+
+	_, _ = client.Do(r)
 }
 
 //Change to be invoked as a go routine
@@ -169,13 +227,22 @@ func Respond(api *slack.Client, atBot string) {
 							channels = append(channels, ev.Channel)
 							fileParams := slack.FileUploadParameters{Filename: file.Name, File: filePath, Filetype: file.Filetype, Channels: channels}
 							api.UploadFile(fileParams)
-							//getStudentChannels
+							channels = GetStudentChannels(db)
+							fileParams.Channels = channels
+							api.UploadFile(fileParams)
 
 							// get due date
 
-							// send to all registered students
-
 							// there should be some kind of staging
+						}
+
+					case strings.Contains(strings.ToLower(ev.Text), "instructor"):
+						if !ChannelExists(ev.Channel) {
+							params := slack.PostMessageParameters{}
+							api.PostMessage(ev.Channel, "Please register with `@teach-bot` in your direct message channel with `teach-bot`", params)
+						} else {
+							fmt.Println(ev.User)
+							StartInstructorConversation("irf")
 						}
 
 					/*  ------------------ NONE OF THE ABOVE ---------------- */

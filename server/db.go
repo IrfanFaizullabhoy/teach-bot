@@ -38,3 +38,15 @@ func CreateTeacher(teacher Teacher, db *gorm.DB) {
 		fmt.Println("error, primary key already exists for user")
 	}
 }
+
+func GetStudentChannels(db *gorm.DB) []string {
+	var channelIDs []string
+	db.Table("students").Select("channel_id").Find(&channelIDs)
+	return channelIDs
+}
+
+func GetInstructorIDs(db *gorm.DB) []string {
+	var instructorIDs []string
+	db.Table("teachers").Select("user_id").Find(&instructorIDs)
+	return instructorIDs
+}
