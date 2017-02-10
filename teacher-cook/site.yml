@@ -1,0 +1,16 @@
+---
+- name: Set up API server with Docker
+  hosts: api-dev
+  become: true
+  roles:
+    - common
+    - docker
+    - credentials
+    - api
+- name: Set up web server with Nginx and Node.js, deploys web app
+  hosts: web
+  become: true
+  roles:
+    - common
+    - credentials
+    - web

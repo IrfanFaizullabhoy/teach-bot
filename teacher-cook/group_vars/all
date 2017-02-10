@@ -1,0 +1,23 @@
+---
+# Project
+
+# Configuration
+ubuntu_dist: trusty
+
+default_user: ubuntu
+default_user_home: /home/ubuntu
+
+docker_pkg_name: docker-engine
+
+apt_key_sig: 58118E89F3A912897C070ADBF76221572C52609D
+apt_key_url: hkp://p80.pool.sks-keyservers.net:80
+apt_repository: deb https://apt.dockerproject.org/repo ubuntu-trusty main
+
+host_kernel_ver: 3.13.0-92-generic
+
+node_source_key_url: https://keyserver.ubuntu.com/pks/lookup?op=get&fingerprint=on&search=0x1655A0AB68576280
+node_version: 6.x
+
+src_dir: /var/repo
+www_dir: /var/www
+api_dir: /var/www/teach

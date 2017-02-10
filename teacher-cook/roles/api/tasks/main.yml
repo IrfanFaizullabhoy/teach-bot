@@ -1,0 +1,66 @@
+- name: Pull down the git repository
+  git:
+    repo: git@github.com:IrfanFaizullabhoy/teacher.git
+    accept_hostkey: True
+    dest: "{{ api_dir }}"
+    key_file: /home/ubuntu/.ssh/id_rsa
+    clone: yes
+
+- name: stop all containers
+  shell: docker kill $(docker ps -q)
+  ignore_errors: yes
+
+- name: remove all containers
+  shell: docker rm $(docker ps -a -q)
+  ignore_errors: yes
+
+- name: pull postgres image manually
+  shell: docker pull postgres:9.5
+
+- name: pull alpine image manually
+  shell: docker pull golang:1.7.1-alpine
+
+- name: build teach-bot image manually
+  shell: docker build -f /var/www/teach/server/Dockerfile -t teach-bot /var/www/teach
+
+- name: Run with inline v2 compose
+  docker_service:
+      project_name: teach-bot
+      pull: no
+      build: yes
+      state: present
+      definition:
+        version: '2'
+        version: '2'
+        services:
+          db:
+            image: postgres:9.5
+            expose:
+              - "5432"
+            ports:
+              - "5432:5432"
+            environment:
+              - POSTGRES_PASSWORD=teachpass
+              - POSTGRES_USER=teach
+              - POSTGRES_DB=usersdev
+          server:
+            image: teach-bot
+            ports:
+              - "8080:8080"
+            depends_on:
+              - db
+            links:
+              - db
+            volumes: 
+              - ./mounted-volume:/mounted-volume
+            environment:
+              - POSTGRES_PASSWORD=teachpass
+              - POSTGRES_USER=teach
+              - DB_PORT_5432_TCP_ADDR=db
+              - DB_NAME=usersdev
+              - DB_USER=teach
+              - DB_PASS=teachpass
+              - DB_SERVICE=db
+              - DB_PORT=5432
+              - SLACK_TOKEN=xoxb-136568950452-8X180knozh1mI8hYPXqzYDZR
+            restart: alway

@@ -1,0 +1,38 @@
+---
+- name: Install Docker prereqs
+  action: apt pkg={{ item }} state=installed
+  with_items:
+    - ca-certificates
+    - linux-image-extra-{{ host_kernel_ver }}
+    - linux-image-extra-virtual
+    - paxctl
+- name: Add Docker repository key
+  apt_key:
+    id: "{{ apt_key_sig }}"
+    keyserver: "{{ apt_key_url }}"
+    state: present
+- name: Add Docker repository and update apt cache
+  apt_repository:
+    repo: "{{ apt_repository }}"
+    mode: "644"
+    update_cache: yes
+    state: present
+- name: Install Docker package ({{ docker_pkg_name }})
+  apt:
+    pkg: "{{ docker_pkg_name }}"
+    state: present
+- name: Install Pip Prereqs
+  action: apt pkg={{ item }} state=installed
+  with_items:
+    - python-setuptools
+    - python-dev
+    - build-essential
+- name: Install Pip
+  easy_install:
+    name: pip
+    state: latest
+- name: Install Docker API
+  action: pip name={{ item }} state=present
+  with_items:
+    - docker-py
+    - docker-compose

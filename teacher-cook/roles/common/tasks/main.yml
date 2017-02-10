@@ -1,0 +1,10 @@
+---
+- name: Update cache and install HTTPS transport for apt
+  apt:
+    name: apt-transport-https
+    state: present
+    update_cache: yes
+- name: Install git
+  apt:
+    name: git
+    state: present
