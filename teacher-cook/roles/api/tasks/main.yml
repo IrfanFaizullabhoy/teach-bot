@@ -2,9 +2,12 @@
   git:
     repo: git@github.com:IrfanFaizullabhoy/teacher.git
     accept_hostkey: True
-    dest: "{{ api_dir }}"
+    dest: /var/www/teacher
     key_file: /home/ubuntu/.ssh/id_rsa
     clone: yes
+
+- name: check existence of folder
+  shell: ls /var/www/teacher
 
 - name: stop all containers
   shell: docker kill $(docker ps -q)
@@ -21,7 +24,7 @@
   shell: docker pull golang:1.7.1-alpine
 
 - name: build teach-bot image manually
-  shell: docker build -f /var/www/teach/server/Dockerfile -t teach-bot /var/www/teach
+  shell: docker build -f /var/www/teacher/server/Dockerfile -t teach-bot /var/www/teacher
 
 - name: Run with inline v2 compose
   docker_service:

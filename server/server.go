@@ -4,8 +4,6 @@ import (
 	"database/sql"
 	"encoding/json"
 	"fmt"
-	//"github.com/jinzhu/gorm"
-	"github.com/nlopes/slack"
 	"io/ioutil"
 	"net/http"
 	"net/url"
@@ -13,7 +11,9 @@ import (
 	"strconv"
 	"strings"
 
+	//"github.com/gorilla/schema"
 	_ "github.com/lib/pq"
+	"github.com/nlopes/slack"
 )
 
 var RegisteredChannels []string
@@ -80,7 +80,7 @@ func StartInstructorConversation(userID string) {
 	data := url.Values{}
 	userID = "U42D42KLG"
 	data.Set("token", "xoxp-135270668007-134513633107-139843303798-8a4a0f1918cd7cd754a65f3540777d95")
-	data.Add("name", "testing-the-autocreate")
+	data.Add("name", "the_one_and_only")
 
 	u, _ := url.ParseRequestURI(apiUrl)
 	u.Path = resource
@@ -92,7 +92,9 @@ func StartInstructorConversation(userID string) {
 	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
-	resp, _ := client.Do(r)
+	resp, err := client.Do(r)
+
+	check(err)
 
 	var groupCreateResponse GroupCreateResponse
 	body, err := ioutil.ReadAll(resp.Body)
@@ -100,6 +102,8 @@ func StartInstructorConversation(userID string) {
 	if err := json.Unmarshal(body, &groupCreateResponse); err != nil {
 		panic(err)
 	}
+
+	fmt.Println("checkpt 3")
 
 	groupID := groupCreateResponse.Group.ID
 	instructors := []string{"U3YKBAK1S", "U42EVJF7E", "U3YK6EPV0", userID}
@@ -126,7 +130,8 @@ func InviteInstructorToPrivateChannel(channelID, instructorID string) {
 	r.Header.Add("Content-Type", "application/x-www-form-urlencoded")
 	r.Header.Add("Content-Length", strconv.Itoa(len(data.Encode())))
 
-	_, _ = client.Do(r)
+	_, err := client.Do(r)
+	check(err)
 }
 
 //Change to be invoked as a go routine

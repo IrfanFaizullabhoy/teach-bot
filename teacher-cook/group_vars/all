@@ -20,4 +20,4 @@ node_version: 6.x
 
 src_dir: /var/repo
 www_dir: /var/www
-api_dir: /var/www/teach
+api_dir: /var/www/teacher

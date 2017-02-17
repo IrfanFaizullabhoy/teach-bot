@@ -21,18 +21,39 @@
   apt:
     pkg: "{{ docker_pkg_name }}"
     state: present
-- name: Install Pip Prereqs
-  action: apt pkg={{ item }} state=installed
-  with_items:
-    - python-setuptools
-    - python-dev
-    - build-essential
-- name: Install Pip
-  easy_install:
-    name: pip
+# Upgrade pip with pip to fix angstwad/docker.ubuntu/pull/35 and docker-py/issues/525
+    # Install latest version when no specific release is set.
+
+- name: Install pip, python-dev package with apt
+  apt:
+    pkg: "{{ item }}"
     state: latest
-- name: Install Docker API
-  action: pip name={{ item }} state=present
+    update_cache: yes
+    cache_valid_time: 600
   with_items:
-    - docker-py
-    - docker-compose
+    - python-dev
+    - python-pip
+- name: Upgrade latest pip, setuptools, docker-py and docker-compose with pip
+  pip:
+    name: "{{ item.name }}"
+    state: latest
+  with_items:
+    - { name: pip, version: "latest", install: true }
+    - { name: setuptools, version: "latest", install: true }
+    - { name: docker-py, version: "latest", install: true }
+    - { name: docker-compose, version: "latest", install: true }
+  when: (item.version=="latest" and item.install)
+  ignore_errors: yes
+
+# Install specific version when set in the variables
+- name: Install specific pip, setuptools, docker-py and docker-compose with pip
+  pip:
+    name: "{{ item.name }}"
+    state: present
+    version: "{{ item.version }}"
+  with_items:
+    - { name: pip, version: "latest", install: "true" }
+    - { name: setuptools, version: "latest", install: "true" }
+    - { name: docker-py, version: "latest", install: "true" }
+    - { name: docker-compose, version: "latest", install: "true" }
+  when: (item.version!="latest" and item.install)
