@@ -46,9 +46,27 @@ var routes = Routes{
 		SignUp,
 	},
 	Route{
+		"SSLCheck",
+		"GET",
+		"/instructors",
+		SSLCheck,
+	},
+	Route{
 		"Instructors",
 		"POST",
 		"/instructors",
 		Instructors,
+	},
+	Route{
+		"Events",
+		"POST",
+		"/events",
+		Events,
+	},
+	Route{
+		"OAuth",
+		"GET",
+		"/oauth",
+		OAuth,
 	},
 }

@@ -38,17 +38,18 @@ func RegisterChannels(api *slack.Client) {
 }
 
 func Run() {
-	api := ConnectToSlack()
+	//api := GetSlackClient()
 	fmt.Println("connected to slack")
-	RegisterChannels(api)
+	//RegisterChannels(api)
 	fmt.Println("registered channels")
-	SendTestMessage(api, "#teacher-test", "Here to help...")
-	RegisterCronJob(api)
-	Respond(api, "")
+	//SendTestMessage(api, "#teacher-test", "Here to help...")
+	//RegisterCronJob(api)
+	//Respond(api, "")
 }
 
-func ConnectToSlack() *slack.Client {
+func GetSlackClient() *slack.Client {
 	token := os.Getenv("SLACK_TOKEN")
+	fmt.Println("connecting to client w token" + token)
 	api := slack.New(token)
 	return api
 }
@@ -187,12 +188,12 @@ func Respond(api *slack.Client, atBot string) {
 						}
 
 					/* -------------- ASSIGNMENT ASSIGNING CONVERSATION ---------------*/
-					case strings.Contains(strings.ToLower(ev.Text), "assignment"):
+					case strings.Contains(strings.ToLower(ev.Text), "/assignment"):
 						if !ChannelExists(ev.Channel) {
 							params := slack.PostMessageParameters{}
 							api.PostMessage(ev.Channel, "Please register with `@teach-bot` in your direct message channel with `teach-bot`", params)
 						} else {
-							api.PostMessage(ev.Channel, strconv.Itoa(ev.File.Size), params)
+
 							client := &http.Client{}
 							req, _ := http.NewRequest("GET", ev.File.URLPrivate, nil)
 							req.Header.Add("Authorization", "Bearer xoxb-136568950452-8X180knozh1mI8hYPXqzYDZR")
