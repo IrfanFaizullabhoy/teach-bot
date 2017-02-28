@@ -16,3 +16,5 @@ kill:
 	docker rm db
 	docker rm -v teachbot-api
 
+enter:
+	docker exec -it teachbot-api /bin/sh

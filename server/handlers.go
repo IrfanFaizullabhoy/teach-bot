@@ -10,84 +10,11 @@ import (
 	"os"
 
 	"github.com/gorilla/schema"
+	"github.com/nlopes/slack"
 )
 
-// Takes in an email and password, returns Student Object
-func Login(w http.ResponseWriter, r *http.Request) {
+// SLASH COMMANDS: /instructors /anonymousQuestion ...
 
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
-	body, err := ioutil.ReadAll(r.Body)
-	check(err)
-
-	var login LoginMsg
-	err = json.Unmarshal(body, &login)
-	check(err)
-	hashedPassword := string(hash(login.Password))
-
-	var Student Student
-	db.Where("email = ?", login.Email).First(&Student)
-	if hashedPassword == Student.HashedPassword {
-		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(Student); err != nil {
-			panic(err)
-		}
-	} else { // login failed
-		w.WriteHeader(http.StatusOK)
-	}
-	w.WriteHeader(http.StatusOK)
-	if err := json.NewEncoder(w).Encode(Student); err != nil {
-		panic(err)
-	}
-}
-
-// Takes in a Student object and adds it to the Database
-func SignUp(w http.ResponseWriter, r *http.Request) {
-
-	var Student Student
-
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
-
-	body, err := ioutil.ReadAll(r.Body)
-	check(err)
-	if err = json.Unmarshal(body, &Student); err != nil {
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(422) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
-		}
-	}
-
-	//CreateStudent(Student, db)
-
-	w.WriteHeader(http.StatusOK)
-	//if err := json.NewEncoder(w).Encode(); err != nil {
-	//	panic(err)
-	//}
-}
-
-// Takes in a Student object and adds it to the Database
 func Instructors(w http.ResponseWriter, r *http.Request) {
 
 	var slashPayload SlashPayload
@@ -131,12 +58,57 @@ func Instructors(w http.ResponseWriter, r *http.Request) {
 	}
 	fmt.Println("checkpt 2")
 	fmt.Println(slashPayload.UserID)
-	StartInstructorConversation(slashPayload.UserID)
+	StartInstructorConversation(slashPayload.UserID, slashPayload.UserName)
 
 	w.WriteHeader(http.StatusOK)
-	//if err := json.NewEncoder(w).Encode(); err != nil {
-	//	panic(err)
-	//}
+}
+
+func AnonymousQuestion(w http.ResponseWriter, r *http.Request) {
+
+	var slashPayload SlashPayload
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if origin := r.Header.Get("Origin"); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers",
+			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	}
+	// Stop here if its Preflighted OPTIONS request
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	err := r.ParseForm()
+	check(err)
+	decoder := schema.NewDecoder()
+	err = decoder.Decode(&slashPayload, r.PostForm)
+	check(err)
+
+	fmt.Println("checkpt 1")
+
+	if slashPayload.Token != "qZNXELMoLQhPLLiae2ih7yER" {
+		fmt.Println("wrong token")
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(403) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+	}
+
+	if slashPayload.SSLCheck == 1 {
+		fmt.Println("ssl check")
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(403) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+	}
+	api := GetSlackClient()
+	channelName := slashPayload.ChannelID
+	messageText := slashPayload.Text
+	PostAnonymousQuestion(api, channelName, messageText)
+	w.WriteHeader(http.StatusOK)
 }
 
 // Handles an SSL Check for slash command
@@ -154,7 +126,8 @@ func SSLCheck(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(403) // unprocessable entity
 }
 
-// Takes in a Student object and adds it to the Database
+// EVENTS API
+// Handles event listening and routes further to other actions
 func Events(w http.ResponseWriter, r *http.Request) {
 
 	var event OuterEvent
@@ -187,15 +160,18 @@ func Events(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	case "event_callback":
-		if event.Event.Type == "file_shared" {
+		switch event.Event.Type {
+		case "file_shared": //files:read
 			DownloadFile(event.Event)
+		case "team_join": //users:read
+			WelcomeToTeam(event.Event)
 		}
 	}
 
 }
 
-// Takes in a Student object and adds it to the Database
-func Assignment(w http.ResponseWriter, r *http.Request) {
+// Takes a file and re-uploads as an assignment
+func Assign(w http.ResponseWriter, r *http.Request) {
 
 	var slashPayload SlashPayload
 
@@ -265,6 +241,50 @@ func OAuth(w http.ResponseWriter, r *http.Request) {
 	//if err := json.NewEncoder(w).Encode(); err != nil {
 	//	panic(err)
 	//}
+}
+
+//INTERACTIVE MESSAGES
+
+func Interactive(w http.ResponseWriter, r *http.Request) {
+	//api := GetSlackClient()
+	var actionResponse ActionResponse
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if origin := r.Header.Get("Origin"); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers",
+			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	}
+	// Stop here if its Preflighted OPTIONS request
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	err := r.ParseForm()
+	check(err)
+	decoder := schema.NewDecoder()
+	err = decoder.Decode(&actionResponse, r.PostForm)
+	check(err)
+
+	var attachmentActionCallback slack.AttachmentActionCallback
+	if err = json.Unmarshal([]byte(actionResponse.Payload), &attachmentActionCallback); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+	}
+
+	switch attachmentActionCallback.CallbackID {
+	case "student_or_teacher":
+		AddToDatabase(attachmentActionCallback)
+	case "assignment_due":
+		HandleDate(attachmentActionCallback)
+	}
+
+	//fmt.Println(attachmentActionCallback)
+
 }
 
 // GetOAuthToken retrieves an AccessToken

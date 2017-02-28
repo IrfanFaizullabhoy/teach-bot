@@ -34,18 +34,6 @@ func NewRouter() *mux.Router {
 var routes = Routes{
 
 	Route{
-		"Login",
-		"POST",
-		"/login",
-		Login,
-	},
-	Route{
-		"SignUp",
-		"POST",
-		"/signup",
-		SignUp,
-	},
-	Route{
 		"SSLCheck",
 		"GET",
 		"/instructors",
@@ -58,15 +46,33 @@ var routes = Routes{
 		Instructors,
 	},
 	Route{
+		"Assign",
+		"POST",
+		"/assign",
+		Assign,
+	},
+	Route{
 		"Events",
 		"POST",
 		"/events",
 		Events,
 	},
 	Route{
+		"AnonymousQuestion",
+		"POST",
+		"/anonymousQuestion",
+		AnonymousQuestion,
+	},
+	Route{
 		"OAuth",
 		"GET",
 		"/oauth",
 		OAuth,
+	},
+	Route{
+		"Interactive",
+		"POST",
+		"/interactive",
+		Interactive,
 	},
 }

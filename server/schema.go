@@ -3,28 +3,24 @@ package main
 import (
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
+	"github.com/nlopes/slack"
 )
 
-type Student struct {
+type User struct {
 	gorm.Model
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	Email          string `json:"email"`
-	UserName       string `json:"username"`
-	UserID         string `gorm:"unique", json:"user_id"`
-	HashedPassword string `json:"hashed_password"`
-	ChannelID      string `json:"channel_id"`
+	ID        string            `json:"id" gorm:"column:user_id" gorm:"unique"`
+	Name      string            `json:"name"`
+	ChannelID string            `json:"channel_id"`
+	IsBot     bool              `json:"is_bot"`
+	Profile   slack.UserProfile `json:"profile"`
+	Role      string            `json:"role"`
 }
 
-type Teacher struct {
+type Assignment struct {
 	gorm.Model
-	FirstName      string `json:"first_name"`
-	LastName       string `json:"last_name"`
-	UserName       string `json:"username"`
-	UserID         string `gorm:"unique", json:"user_id"`
-	Email          string `json:"email"`
-	HashedPassword string `json:"hashed_password"`
-	ChannelID      string `json:"channel_id"`
+	DueDate  string `json:"due_date"`
+	Link     string `json:"link"`
+	FileName string `json:"file_name"`
 }
 
 type LoginMsg struct {
@@ -106,6 +102,10 @@ type File struct {
 type GroupCreateResponse struct {
 	OK    bool  `json:"ok"`
 	Group Group `json:"group"`
+}
+
+type ActionResponse struct {
+	Payload string `json:"payload"`
 }
 
 type Group struct {
