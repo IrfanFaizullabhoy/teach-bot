@@ -57,6 +57,12 @@ func FillUserInfo(user slack.User, role string, db *gorm.DB) {
 
 }
 
+func GetUser(userID string) User {
+	var dbUser User
+	db.Where("user_id = ?", userID).First(&dbUser)
+	return dbUser
+}
+
 func WelcomeToTeam(TeamJoinEvent Event) {
 	userID := TeamJoinEvent.User
 	fmt.Println("userID")
@@ -116,7 +122,12 @@ func GetStudents() []User {
 	return students
 }
 
-func isTeacher() bool {
-	// TODO
-	return false
+func isTeacher(userID string) bool {
+	var dbUser User
+	db.Where("user_id = ?", userID).First(&dbUser)
+	if dbUser.Role == "teacher" {
+		return true
+	} else {
+		return false
+	}
 }

@@ -20,6 +20,6 @@ func main() {
 	fmt.Println("intermediate check")
 	SetupDB(db)
 	fmt.Println("connected")
-	go Run()
+	Run()
 	log.Fatal(http.ListenAndServe(":8080", router))
 }

@@ -18,9 +18,20 @@ type User struct {
 
 type Assignment struct {
 	gorm.Model
-	DueDate  string `json:"due_date"`
-	Link     string `json:"link"`
-	FileName string `json:"file_name"`
+	DueDate    string `json:"due_date"`
+	Link       string `json:"link"`
+	FileName   string `json:"file_name"`
+	FilePath   string `json:"filepath"`
+	UserID     string `json:"user_id"`
+	Downloaded bool   `json:"downloaded"`
+}
+
+type AcknowledgeMessage struct {
+	gorm.Model
+	Text              string   `json:"text"`
+	UserID            string   `json:"user_id"`
+	ChannelID         string   `json:"channel_id"`
+	UsersAcknowledged []string `json:"users_acknowledged"`
 }
 
 type LoginMsg struct {

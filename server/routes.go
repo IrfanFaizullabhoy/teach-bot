@@ -75,4 +75,10 @@ var routes = Routes{
 		"/interactive",
 		Interactive,
 	},
+	Route{
+		"Acknowledge",
+		"POST",
+		"/acknowledge",
+		Acknowledge,
+	},
 }

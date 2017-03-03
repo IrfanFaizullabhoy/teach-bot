@@ -39,15 +39,6 @@ func Instructors(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("checkpt 1")
 
-	if slashPayload.Token != "qZNXELMoLQhPLLiae2ih7yER" {
-		fmt.Println("wrong token")
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(403) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
-		}
-	}
-
 	if slashPayload.SSLCheck == 1 {
 		fmt.Println("ssl check")
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -87,7 +78,7 @@ func AnonymousQuestion(w http.ResponseWriter, r *http.Request) {
 
 	fmt.Println("checkpt 1")
 
-	if slashPayload.Token != "qZNXELMoLQhPLLiae2ih7yER" {
+	if slashPayload.Token != "mDMyhrbIMX1k0U6YTsPsw3ca" {
 		fmt.Println("wrong token")
 		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 		w.WriteHeader(403) // unprocessable entity
@@ -105,9 +96,60 @@ func AnonymousQuestion(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	api := GetSlackClient()
-	channelName := slashPayload.ChannelID
+	_, channelID := ChannelExists("teacher-test")
+	channelName := channelID
 	messageText := slashPayload.Text
 	PostAnonymousQuestion(api, channelName, messageText)
+	w.WriteHeader(http.StatusOK)
+}
+
+func Acknowledge(w http.ResponseWriter, r *http.Request) {
+
+	var slashPayload SlashPayload
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if origin := r.Header.Get("Origin"); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers",
+			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	}
+	// Stop here if its Preflighted OPTIONS request
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	err := r.ParseForm()
+	check(err)
+	decoder := schema.NewDecoder()
+	err = decoder.Decode(&slashPayload, r.PostForm)
+	check(err)
+
+	if slashPayload.SSLCheck == 1 {
+		fmt.Println("ssl check")
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(403) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+	}
+
+	api := GetSlackClient()
+
+	//Add message to DB
+	channelName := channelID
+	messageText := slashPayload.Text
+	var acknowledgedUsers []string
+	acknowledgedUsers = append(acknowledgedUsers, slashPayload.UserID)
+	acknowledgeMsg := AcknowledgeMessage{UserID: slashPayload.UserID, Text: messageText, ChannelID: slashPayload.ChannelID, UsersAcknowledged: acknowledgedUsers}
+	db.Create(&acknowledgeMsg)
+
+	//Respond with acknowledge button
+	param := slack.PostMessageParameters{}
+	attachment := slack.Attachment{CallbackID: "acknowledge", Fallback: "acknowledge service not working properly"}
+	attachmentMondayAction := slack.AttachmentAction{Name: "acknowledge", Text: "Acknowledge", Type: "button"}
+	params.Attachments = append(params.Attachments, attachment)
+	api.PostMessage(slashPayload.ChannelID, slashPayload.Text, param)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -156,7 +198,7 @@ func Events(w http.ResponseWriter, r *http.Request) {
 	switch event.Type {
 	case "url_verification":
 		w.WriteHeader(http.StatusOK)
-		if err := json.NewEncoder(w).Encode(&ChallengeResponse{Token: event.Token}); err != nil {
+		if err := json.NewEncoder(w).Encode(&ChallengeResponse{Token: event.Token, Challenge: event.Challenge}); err != nil {
 			panic(err)
 		}
 	case "event_callback":
@@ -192,18 +234,7 @@ func Assign(w http.ResponseWriter, r *http.Request) {
 	decoder := schema.NewDecoder()
 	err = decoder.Decode(&slashPayload, r.PostForm)
 	check(err)
-
-	fmt.Println("checkpt 1")
-
-	if slashPayload.Token != "qZNXELMoLQhPLLiae2ih7yER" {
-		fmt.Println("wrong token")
-		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-		w.WriteHeader(403) // unprocessable entity
-		if err := json.NewEncoder(w).Encode(err); err != nil {
-			panic(err)
-		}
-	}
-
+	DateInteractive(slashPayload.UserID)
 	w.WriteHeader(http.StatusOK)
 	//if err := json.NewEncoder(w).Encode(); err != nil {
 	//	panic(err)
@@ -228,7 +259,7 @@ func OAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 
-	accessToken, scope, err := GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https://2a84aaec.ngrok.io/oauth")
+	accessToken, scope, err := GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https://b577b974.ngrok.io/oauth")
 
 	fmt.Println(scope)
 	os.Setenv("SLACK_TOKEN", accessToken)
@@ -281,6 +312,8 @@ func Interactive(w http.ResponseWriter, r *http.Request) {
 		AddToDatabase(attachmentActionCallback)
 	case "assignment_due":
 		HandleDate(attachmentActionCallback)
+	case "acknowledge":
+		AcknowledgeCallback(attachmentActionCallback)
 	}
 
 	//fmt.Println(attachmentActionCallback)

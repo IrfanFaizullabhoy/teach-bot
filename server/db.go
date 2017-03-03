@@ -26,5 +26,5 @@ func ConnectToRDS() *gorm.DB {
 }
 
 func SetupDB(db *gorm.DB) {
-	db.AutoMigrate(&User{})
+	db.AutoMigrate(&User{}, &Assignment{})
 }
