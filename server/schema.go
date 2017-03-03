@@ -31,6 +31,7 @@ type AcknowledgeMessage struct {
 	Text              string   `json:"text"`
 	UserID            string   `json:"user_id"`
 	ChannelID         string   `json:"channel_id"`
+	Timestamp         string   `json:"timestamp"`
 	UsersAcknowledged []string `json:"users_acknowledged"`
 }
 

@@ -27,7 +27,8 @@ func DownloadFile(fileSharedEvent Event) {
 	assignment := FindFile(file.User, file.Name)
 
 	// IF ASSIGNMENT = TO ASSIGN
-	if isAssignment(fileSharedEvent) {
+
+	/*if isAssignment(fileSharedEvent) {
 		fmt.Println("is an assignment")
 		AssignFile(fileSharedEvent)
 	} else if isSubmission() {
@@ -35,7 +36,7 @@ func DownloadFile(fileSharedEvent Event) {
 
 		fmt.Println("is a submission")
 
-	}
+	}*/
 
 	// ELSE IF ASSIGNMENT = TO COLLECT
 
@@ -81,15 +82,16 @@ func DownloadFile(fileSharedEvent Event) {
 }
 
 func IsSubmission(fileSharedChannel string) bool {
-
+	return true
 }
 
 func IsAssignment(fileSharedEvent Event) bool {
-	api := GetSlackClient()
+	/*api := GetSlackClient()
 	if isTeacher(fileSharedEvent.User) {
 		user := GetUser(fileSharedEvent.User)
 		//api.PostMessage(user.ChannelID, "Is t, params)
-	}
+	}*/
+	return true
 
 }
 

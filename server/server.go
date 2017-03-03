@@ -9,12 +9,12 @@ import (
 	"github.com/nlopes/slack"
 )
 
-var EventChannel chan Event
+//var EventChannel chan Event
 
 func Run() {
 	//WelcomeToTeamTest("U3YF3JM35")
 	//SendTestMessage(api, "#teacher-test", "Here to help...")
-	EventChannel = make(chan Event)
+	//EventChannel = make(chan Event)
 }
 
 func GetSlackClient() *slack.Client {
@@ -32,10 +32,6 @@ func PostAnonymousQuestion(api *slack.Client, channelName string, messageText st
 		fmt.Printf("%s\n", err)
 		return
 	}
-}
-
-func AcknowledgeCallback(attachmentAcknowledgeAction slack.AttachmentActionCallback) {
-	//attachmentAcknowledgeAction
 }
 
 func GroupExists(groupName string) (bool, string) {

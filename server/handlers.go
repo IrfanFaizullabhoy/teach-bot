@@ -136,20 +136,17 @@ func Acknowledge(w http.ResponseWriter, r *http.Request) {
 
 	api := GetSlackClient()
 
-	//Add message to DB
-	channelName := channelID
-	messageText := slashPayload.Text
+	//Respond with acknowledge button
+	params := slack.PostMessageParameters{}
+	attachment := slack.Attachment{CallbackID: "acknowledge", Fallback: "acknowledge service not working properly"}
+	attachment.Actions = append(attachment.Actions, slack.AttachmentAction{Name: "acknowledge", Text: "Acknowledge", Type: "button"})
+	params.Attachments = append(params.Attachments, attachment)
+	channelID, ts, _ := api.PostMessage(slashPayload.ChannelID, slashPayload.Text, params)
 	var acknowledgedUsers []string
 	acknowledgedUsers = append(acknowledgedUsers, slashPayload.UserID)
-	acknowledgeMsg := AcknowledgeMessage{UserID: slashPayload.UserID, Text: messageText, ChannelID: slashPayload.ChannelID, UsersAcknowledged: acknowledgedUsers}
+	acknowledgeMsg := AcknowledgeMessage{UserID: slashPayload.UserID, Timestamp: ts, ChannelID: channelID, UsersAcknowledged: acknowledgedUsers}
 	db.Create(&acknowledgeMsg)
 
-	//Respond with acknowledge button
-	param := slack.PostMessageParameters{}
-	attachment := slack.Attachment{CallbackID: "acknowledge", Fallback: "acknowledge service not working properly"}
-	attachmentMondayAction := slack.AttachmentAction{Name: "acknowledge", Text: "Acknowledge", Type: "button"}
-	params.Attachments = append(params.Attachments, attachment)
-	api.PostMessage(slashPayload.ChannelID, slashPayload.Text, param)
 	w.WriteHeader(http.StatusOK)
 }
 
