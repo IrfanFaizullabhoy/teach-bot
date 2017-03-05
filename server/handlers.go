@@ -13,7 +13,7 @@ import (
 	"github.com/nlopes/slack"
 )
 
-// SLASH COMMANDS: /instructors /anonymousQuestion ...
+// SLASH COMMANDS: /instructors /anonymousQuestion /acknowledge...
 
 func Instructors(w http.ResponseWriter, r *http.Request) {
 
@@ -142,11 +142,10 @@ func Acknowledge(w http.ResponseWriter, r *http.Request) {
 	attachment.Actions = append(attachment.Actions, slack.AttachmentAction{Name: "acknowledge", Text: "Acknowledge", Type: "button"})
 	params.Attachments = append(params.Attachments, attachment)
 	channelID, ts, _ := api.PostMessage(slashPayload.ChannelID, slashPayload.Text, params)
-	var acknowledgedUsers []string
-	acknowledgedUsers = append(acknowledgedUsers, slashPayload.UserID)
-	acknowledgeMsg := AcknowledgeMessage{UserID: slashPayload.UserID, Timestamp: ts, ChannelID: channelID, UsersAcknowledged: acknowledgedUsers}
+	acknowledgeMsg := AcknowledgeMessage{UserID: slashPayload.UserID, Timestamp: ts, ChannelID: channelID}
 	db.Create(&acknowledgeMsg)
-
+	acknowledgeAction := AcknowledgeAction{AckID: acknowledgeMsg.ID, UserID: slashPayload.UserID, Value: ""}
+	db.Create(&acknowledgeAction)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -201,7 +200,7 @@ func Events(w http.ResponseWriter, r *http.Request) {
 	case "event_callback":
 		switch event.Event.Type {
 		case "file_shared": //files:read
-			DownloadFile(event.Event)
+			HandleFileShared(event.Event)
 		case "team_join": //users:read
 			WelcomeToTeam(event.Event)
 		}
@@ -231,7 +230,7 @@ func Assign(w http.ResponseWriter, r *http.Request) {
 	decoder := schema.NewDecoder()
 	err = decoder.Decode(&slashPayload, r.PostForm)
 	check(err)
-	DateInteractive(slashPayload.UserID)
+	DateInteractive(slashPayload.UserID, slashPayload.ChannelID)
 	w.WriteHeader(http.StatusOK)
 	//if err := json.NewEncoder(w).Encode(); err != nil {
 	//	panic(err)

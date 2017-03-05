@@ -10,12 +10,21 @@ import (
 func AcknowledgeCallback(attachmentAcknowledgeAction slack.AttachmentActionCallback) {
 	api := GetSlackClient()
 	userID := attachmentAcknowledgeAction.User.ID
+	value := attachmentAcknowledgeAction.Actions[0].Value
 	ts := attachmentAcknowledgeAction.OriginalMessage.Timestamp
 	var acknowledges []AcknowledgeMessage
-	db.Where("user_id = ? AND timestamp = ? AND ", userID, ts).Find(&acknowledges)
+	db.Where("user_id = ? AND timestamp = ?", userID, ts).Find(&acknowledges)
 	if len(acknowledges) == 1 {
-		AddAcknowledgement(userID, acknowledges[0])
-		if FullyAcknowledged(acknowledges[0], attachmentAcknowledgeAction.Channel) {
+		acknowledge := acknowledges[0]
+		var acknowledgeactions []AcknowledgeAction
+		db.Model(&acknowledge).Related(&acknowledgeactions, "AcknowledgeActions")
+		acknowledge.AcknowledgeActions = acknowledgeactions
+		for _, action := range acknowledge.AcknowledgeActions {
+			fmt.Println(action.ID)
+		}
+		acknowledgeAction := AcknowledgeAction{UserID: userID, Value: value, AckID: acknowledges[0].ID}
+		AddAcknowledgement(acknowledge, acknowledgeAction)
+		if FullyAcknowledged(acknowledge, attachmentAcknowledgeAction.Channel) {
 			api.UpdateMessage(attachmentAcknowledgeAction.Channel.ID, attachmentAcknowledgeAction.OriginalMessage.Timestamp, "*[FULLY_ACKNOWLEDGED]*"+attachmentAcknowledgeAction.OriginalMessage.Text)
 		}
 	} else {
@@ -32,25 +41,30 @@ func FullyAcknowledged(acknowledge AcknowledgeMessage, channel slack.Channel) bo
 			activeMembers++
 		}
 	}*/
-	if len(acknowledge.UsersAcknowledged) == len(channel.Members)-1 {
+	if len(acknowledge.AcknowledgeActions) == len(channel.Members)-1 {
 		return true
 	} else {
 		return false
 	}
 }
 
-func AddAcknowledgement(userID string, acknwoledge AcknowledgeMessage) {
-	if !contains(acknwoledge.UsersAcknowledged, userID) {
-		acknwoledge.UsersAcknowledged = append(acknwoledge.UsersAcknowledged, userID)
+func AddAcknowledgement(acknwoledge AcknowledgeMessage, acknowledgeAction AcknowledgeAction) {
+	fmt.Println("adding acknowledgement")
+	if !ContainsAcknowledge(acknwoledge.AcknowledgeActions, acknowledgeAction) {
+		db.Create(&acknowledgeAction)
+		acknwoledge.AcknowledgeActions = append(acknwoledge.AcknowledgeActions, acknowledgeAction)
 		db.Save(&acknwoledge)
 	}
+
 }
 
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
+func ContainsAcknowledge(acknowledgeActions []AcknowledgeAction, acknowledgeAction AcknowledgeAction) bool {
+	for _, AAction := range acknowledgeActions {
+		if acknowledgeAction.UserID == AAction.UserID &&
+			acknowledgeAction.Value == AAction.Value {
 			return true
 		}
 	}
+	//db.Model(&AcknowledgeAction).
 	return false
 }

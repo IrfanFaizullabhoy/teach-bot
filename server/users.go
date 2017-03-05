@@ -67,22 +67,45 @@ func WelcomeToTeam(TeamJoinEvent Event) {
 	userID := TeamJoinEvent.User
 	fmt.Println("userID")
 	api := GetSlackClient()
+	userInfo, err := api.GetUserInfo(userID)
+	check(err)
 	params := slack.NewPostMessageParameters()
 	attachment := slack.Attachment{CallbackID: "student_or_teacher", Fallback: "service not working properly"}
 	attachmentStudentAction := slack.AttachmentAction{Name: "student", Text: "Student", Type: "button"}
 	attachmentTeacherAction := slack.AttachmentAction{Name: "teacher", Text: "Teacher", Type: "button"}
 	attachment.Actions = append(attachment.Actions, attachmentStudentAction)
 	attachment.Actions = append(attachment.Actions, attachmentTeacherAction)
-	_, _, channel, err := api.OpenIMChannel(userID)
-	check(err)
-	user := User{ID: userID, ChannelID: channel}
+	groupID := FindGroupByName("teachbot-and-" + userInfo.Name)
+	if groupID == "" {
+		group, err := api.CreateGroup("teachbot-and-" + userInfo.Name)
+		check(err)
+		groupID = group.ID
+	}
+	api.InviteUserToGroup(groupID, userID)
+	teachBotID := GetTeachBotID()
+	api.InviteUserToGroup(groupID, teachBotID)
+	user := User{ID: userID, ChannelID: groupID}
 	CreateUser(user, db)
-	_, _, err = api.PostMessage(channel, "Welcome! Are you a student or a teacher?", params)
+	_, _, err = api.PostMessage(user.ChannelID, "Welcome! Are you a student or a teacher?", params)
 	check(err)
+}
+
+func GetTeachBotID() string {
+	api := GetSlackClient()
+	users, err := api.GetUsers()
+	check(err)
+	for _, user := range users {
+		if user.IsBot && user.Name == "teachbot2" {
+			return user.ID
+		}
+	}
+	return ""
 }
 
 func WelcomeToTeamTest(userID string) {
 	api := GetSlackClient()
+	userInfo, err := api.GetUserInfo(userID)
+	check(err)
 	params := slack.NewPostMessageParameters()
 	attachment := slack.Attachment{CallbackID: "student_or_teacher", Fallback: "service not working properly"}
 	attachmentStudentAction := slack.AttachmentAction{Name: "student", Text: "Student", Type: "button"}
@@ -90,12 +113,31 @@ func WelcomeToTeamTest(userID string) {
 	attachment.Actions = append(attachment.Actions, attachmentStudentAction)
 	attachment.Actions = append(attachment.Actions, attachmentTeacherAction)
 	params.Attachments = append(params.Attachments, attachment)
-	_, _, channel, err := api.OpenIMChannel(userID)
-	check(err)
-	user := User{ID: userID, ChannelID: channel}
+	groupID := FindGroupByName("teachbot-and-" + userInfo.Name)
+	if groupID == "" {
+		group, err := api.CreateGroup("teachbot-and-" + userInfo.Name)
+		check(err)
+		groupID = group.ID
+	}
+	api.InviteUserToGroup(groupID, userID)
+	teachBotID := GetTeachBotID()
+	api.InviteUserToGroup(groupID, teachBotID)
+	user := User{ID: userID, ChannelID: groupID}
 	CreateUser(user, db)
-	_, _, err = api.PostMessage(channel, "Welcome! Are you a student or a teacher?", params)
+	_, _, err = api.PostMessage(user.ChannelID, "Welcome! Are you a student or a teacher?", params)
 	check(err)
+}
+
+func FindGroupByName(groupName string) string {
+	api := GetSlackClient()
+	groups, err := api.GetGroups(false)
+	check(err)
+	for _, group := range groups {
+		if group.Name == groupName {
+			return group.ID
+		}
+	}
+	return ""
 }
 
 func AddToDatabase(StudentOrTeacherAction slack.AttachmentActionCallback) {

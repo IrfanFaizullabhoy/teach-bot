@@ -28,11 +28,18 @@ type Assignment struct {
 
 type AcknowledgeMessage struct {
 	gorm.Model
-	Text              string   `json:"text"`
-	UserID            string   `json:"user_id"`
-	ChannelID         string   `json:"channel_id"`
-	Timestamp         string   `json:"timestamp"`
-	UsersAcknowledged []string `json:"users_acknowledged"`
+	Text               string              `json:"text"`
+	UserID             string              `json:"user_id"`
+	ChannelID          string              `json:"channel_id"`
+	Timestamp          string              `json:"timestamp"`
+	AcknowledgeActions []AcknowledgeAction `gorm:"ForeignKey:AckID"`
+}
+
+type AcknowledgeAction struct {
+	gorm.Model
+	AckID  uint   `json:"ack_id"`
+	UserID string `json:"user_id"`
+	Value  string `json:"value"`
 }
 
 type LoginMsg struct {

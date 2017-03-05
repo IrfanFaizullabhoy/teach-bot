@@ -17,30 +17,26 @@ func GrabAssignMessage(channelID, userID string) {
 
 }
 
-func DownloadFile(fileSharedEvent Event) {
-	//GET FILE INFO
+func HandleFileShared(fileSharedEvent Event) {
+	if isTeacher(fileSharedEvent.User) {
+		go DownloadAssignment(fileSharedEvent)
+	} else {
+		go SubmitAssignment(fileSharedEvent)
+	}
+}
+
+// ELSE IF ASSIGNMENT = TO COLLECT
+func SubmitAssignment(fileSharedEvent Event) {
+}
+
+// ELSE RANDOM ASSIGNMENT [make sure its not to assign or collect]
+func DownloadAssignment(fileSharedEvent Event) {
 	api := GetSlackClient()
 	file, _, _, err := api.GetFileInfo(fileSharedEvent.File.ID, 1, 1) //returns file with one comment/onepage
 	check(err)
 
 	//FIND IT IN THE DB
-	assignment := FindFile(file.User, file.Name)
-
-	// IF ASSIGNMENT = TO ASSIGN
-
-	/*if isAssignment(fileSharedEvent) {
-		fmt.Println("is an assignment")
-		AssignFile(fileSharedEvent)
-	} else if isSubmission() {
-		// ATTACHMENT IS A SUBMISSION
-
-		fmt.Println("is a submission")
-
-	}*/
-
-	// ELSE IF ASSIGNMENT = TO COLLECT
-
-	// ELSE RANDOM ASSIGNMENT [make sure its not to assign or collect]
+	assignment := FindAssignment(file.User, file.Name)
 
 	// GOOGLE DOC
 	if strings.Contains(file.URLPrivate, "google.com") {
@@ -79,23 +75,35 @@ func DownloadFile(fileSharedEvent Event) {
 	assignment.Downloaded = true
 	assignment.FileName = file.Name
 	db.Save(&assignment)
+
+	ConfirmAndSendAssignment(assignment)
 }
 
-func IsSubmission(fileSharedChannel string) bool {
-	return true
+func ConfirmAndSendAssignment(assignment Assignment) {
+	api := GetSlackClient()
+	/*params := slack.NewPostMessageParameters()
+	attachment := slack.Attachment{CallbackID: "confirm_assignment", Fallback: "service not working properly"}
+	attachmentSendAction := slack.AttachmentAction{Name: "send", Text: "Send Assignment", Type: "button"}
+	attachmentDeleteAction := slack.AttachmentAction{Name: "delete", Text: "This is Incorrect", Type: "button"}
+	//AttachmentGroupAction
+	attachment.Actions = append(attachment.Actions, attachmentSendAction)
+	attachment.Actions = append(attachment.Actions, attachmentDeleteAction)
+	params.Attachments = append(params.Attachments, attachment)
+	_, _, err := api.PostMessage(channel, "Confirming, I should send out `"+
+		assignment.FileName+"` due on *"+assignment.DueDate+"*", params)
+	check(err)*/
+
+	students := GetStudents()
+	var channels []string
+	for _, student := range students {
+		channels = append(channels, student.ChannelID)
+	}
+	params := slack.FileUploadParameters{File: assignment.FilePath, Filename: assignment.FileName, Channels: channels}
+	_, err := api.UploadFile(params)
+	check(err)
 }
 
-func IsAssignment(fileSharedEvent Event) bool {
-	/*api := GetSlackClient()
-	if isTeacher(fileSharedEvent.User) {
-		user := GetUser(fileSharedEvent.User)
-		//api.PostMessage(user.ChannelID, "Is t, params)
-	}*/
-	return true
-
-}
-
-func FindFile(userID, fileName string) Assignment {
+func FindAssignment(userID, fileName string) Assignment {
 	api := GetSlackClient()
 	var assignments []Assignment
 	params := slack.PostMessageParameters{}
@@ -104,14 +112,20 @@ func FindFile(userID, fileName string) Assignment {
 		user := GetUser(userID)
 		api.PostMessage(user.ChannelID, "Downloading the file: `"+fileName+"`", params)
 		return assignments[0]
+	} else if len(assignments) == 0 {
+		return assignments[0]
 	} else {
 		fmt.Println(userID)
 		fmt.Println("more than one assigment not downloaded... " + strconv.Itoa(len(assignments)))
-		return assignments[0]
+		return WhichAssignment(userID, assignments)
 	}
 }
 
-func DateInteractive(userID string) {
+func WhichAssignment(userID string, assignments []Assignment) Assignment {
+	return assignments[0]
+}
+
+func DateInteractive(userID, channel string) {
 	api := GetSlackClient()
 	params := slack.NewPostMessageParameters()
 	attachment := slack.Attachment{CallbackID: "assignment_due", Fallback: "service not working properly"}
@@ -120,9 +134,7 @@ func DateInteractive(userID string) {
 	attachment.Actions = append(attachment.Actions, attachmentMondayAction)
 	attachment.Actions = append(attachment.Actions, attachmentOtherAction)
 	params.Attachments = append(params.Attachments, attachment)
-	_, _, channel, err := api.OpenIMChannel(userID)
-	check(err)
-	_, _, err = api.PostMessage(channel, "When would you like the assignment to be due?", params)
+	_, _, err := api.PostMessage(channel, "When would you like the assignment to be due?", params)
 	check(err)
 }
 
@@ -132,11 +144,9 @@ func HandleDate(attachmentDateAction slack.AttachmentActionCallback) {
 		if attachmentDateAction.Actions[0].Name == "monday" {
 			monday := GetNextMonday().Format(time.ANSIC)
 			params := slack.PostMessageParameters{}
-			api.PostMessage(attachmentDateAction.Channel.ID, "Great, it'll be due on `"+monday+"`", params)
-			fmt.Println(monday)
 			assignment := Assignment{DueDate: monday, UserID: attachmentDateAction.User.ID, Downloaded: false}
-			CreateAssignment(assignment, db)
-			api.PostMessage(attachmentDateAction.Channel.ID, "Can you please post the Google Drive link or File for the homework?", params)
+			go CreateAssignment(assignment, db)
+			api.PostMessage(attachmentDateAction.Channel.ID, "Great, it'll be due on *"+monday+"*\nPlease press the `+` sign below/to my left to attach the homework?", params)
 			// go routine that cleans up db if there is no file that gets uploaded in 5 minutes
 		} else {
 			//TODO

@@ -12,7 +12,7 @@ import (
 //var EventChannel chan Event
 
 func Run() {
-	//WelcomeToTeamTest("U3YF3JM35")
+	WelcomeToTeamTest("U3YF3JM35")
 	//SendTestMessage(api, "#teacher-test", "Here to help...")
 	//EventChannel = make(chan Event)
 }
