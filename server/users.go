@@ -10,6 +10,8 @@ import (
 	"strings"
 )
 
+var StudentMap map[string]User
+
 func ParseStudentName(userInput string) (string, string, error) {
 	names := strings.Split(userInput, " ")
 	if len(names) == 3 &&
@@ -58,8 +60,11 @@ func FillUserInfo(user slack.User, role string, db *gorm.DB) {
 }
 
 func GetUser(userID string) User {
-	var dbUser User
-	db.Where("user_id = ?", userID).First(&dbUser)
+	dbUser, ok := StudentMap[userID]
+	if !ok {
+		db.Where("user_id = ?", userID).First(&dbUser)
+		StudentMap[userID] = dbUser
+	}
 	return dbUser
 }
 

@@ -18,12 +18,25 @@ type User struct {
 
 type Assignment struct {
 	gorm.Model
-	DueDate    string `json:"due_date"`
-	Link       string `json:"link"`
-	FileName   string `json:"file_name"`
-	FilePath   string `json:"filepath"`
-	UserID     string `json:"user_id"`
-	Downloaded bool   `json:"downloaded"`
+	DueDate     string       `json:"due_date"`
+	Link        string       `json:"link"`
+	FileName    string       `json:"file_name"`
+	FilePath    string       `json:"filepath"`
+	UserID      string       `json:"user_id"`
+	Downloaded  bool         `json:"downloaded"`
+	Submissions []Submission `gorm:"ForeignKey:AssignmentID"`
+}
+
+type Submission struct {
+	gorm.Model
+	AssigmentID   uint   `json:"assignment_id"`
+	UserID        string `json:"user_id"`
+	ChannelID     string `json:"channel_id"`
+	Submitted     bool   `json:"submitted"`
+	FileName      string `json:"file_name"`
+	FilePath      string `json:"filepath"`
+	Link          string `json:"link"`
+	LastSubmitted string `json:"last_submitted"`
 }
 
 type AcknowledgeMessage struct {

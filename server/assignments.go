@@ -21,12 +21,8 @@ func HandleFileShared(fileSharedEvent Event) {
 	if isTeacher(fileSharedEvent.User) {
 		go DownloadAssignment(fileSharedEvent)
 	} else {
-		go SubmitAssignment(fileSharedEvent)
+		go DownloadSubmission(fileSharedEvent)
 	}
-}
-
-// ELSE IF ASSIGNMENT = TO COLLECT
-func SubmitAssignment(fileSharedEvent Event) {
 }
 
 // ELSE RANDOM ASSIGNMENT [make sure its not to assign or collect]
