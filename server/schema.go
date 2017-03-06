@@ -16,6 +16,12 @@ type User struct {
 	Role      string            `json:"role"`
 }
 
+type UserTeam struct {
+	gorm.Model
+	Name      string `json:"name"`
+	ChannelID string `json:"channel_id"`
+}
+
 type Assignment struct {
 	gorm.Model
 	DueDate     string       `json:"due_date"`

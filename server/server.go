@@ -13,6 +13,8 @@ import (
 
 func Run() {
 	WelcomeToTeamTest("U3YF3JM35")
+	InitializeStudentMap()
+
 	//SendTestMessage(api, "#teacher-test", "Here to help...")
 	//EventChannel = make(chan Event)
 }

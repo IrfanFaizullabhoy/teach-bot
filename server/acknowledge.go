@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"strconv"
+	"strings"
 
 	"github.com/nlopes/slack"
 )
@@ -24,8 +25,9 @@ func AcknowledgeCallback(attachmentAcknowledgeAction slack.AttachmentActionCallb
 		}
 		acknowledgeAction := AcknowledgeAction{UserID: userID, Value: value, AckID: acknowledges[0].ID}
 		AddAcknowledgement(acknowledge, acknowledgeAction)
-		if FullyAcknowledged(acknowledge, attachmentAcknowledgeAction.Channel) {
-			api.UpdateMessage(attachmentAcknowledgeAction.Channel.ID, attachmentAcknowledgeAction.OriginalMessage.Timestamp, "*[FULLY_ACKNOWLEDGED]*"+attachmentAcknowledgeAction.OriginalMessage.Text)
+		if FullyAcknowledged(acknowledge, attachmentAcknowledgeAction.Channel) &&
+			!strings.Contains(attachmentAcknowledgeAction.OriginalMessage.Text, "[FULLY_ACKNOWLEDGED]") {
+			api.UpdateMessage(attachmentAcknowledgeAction.Channel.ID, attachmentAcknowledgeAction.OriginalMessage.Timestamp, " [FULLY_ACKNOWLEDGED] "+attachmentAcknowledgeAction.OriginalMessage.Text)
 		}
 	} else {
 		fmt.Println(userID)
@@ -41,7 +43,11 @@ func FullyAcknowledged(acknowledge AcknowledgeMessage, channel slack.Channel) bo
 			activeMembers++
 		}
 	}*/
-	if len(acknowledge.AcknowledgeActions) == len(channel.Members)-1 {
+	api := GetSlackClient()
+	channelPtr, err := api.GetGroupInfo(channel.ID)
+	check(err)
+	fmt.Println(strconv.Itoa(len(channelPtr.Members)))
+	if len(acknowledge.AcknowledgeActions) >= len(channelPtr.Members)-1 {
 		return true
 	} else {
 		return false

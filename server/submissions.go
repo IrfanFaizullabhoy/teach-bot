@@ -1,10 +1,13 @@
 package main
 
 import (
+	"archive/zip"
 	"fmt"
+	"io"
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 
@@ -31,13 +34,46 @@ func CollectSubmissions(assignment Assignment) {
 
 func SubmissionReport(assignment Assignment) {
 	//	students := GetStudents()
-	var studentsWithoutSubmission []string
+	zipFilename := assignment.UserID + ".zip"
+	newfile, err := os.Create(zipFilename)
+	check(err)
+	zipit := zip.NewWriter(newfile)
+
 	for _, submission := range assignment.Submissions {
-		if submission.Submitted == false {
-			studentsWithoutSubmission = append(studentsWithoutSubmission, submission.UserID)
+		if submission.Submitted {
+			submissionFile, err := os.Open(submission.FilePath)
+			check(err)
+			defer submissionFile.Close()
+
+			info, err := submissionFile.Stat()
+			check(err)
+
+			header, err := zip.FileInfoHeader(info)
+			check(err)
+
+			writer, err := zipit.CreateHeader(header)
+			check(err)
+
+			_, err = io.Copy(writer, submissionFile)
+			check(err)
 		}
 	}
 
+	err = zipit.Close()
+	check(err)
+	err = newfile.Close()
+	check(err)
+
+	info, err := newfile.Stat()
+	check(err)
+
+	path, err := filepath.Abs(filepath.Dir(info.Name()))
+	path = path + newfile.Name()
+
+	channels := GetInstructorChannels()
+	fileParams := slack.FileUploadParameters{File: path, Filetype: ".zip", Filename: info.Name(), Channels: channels}
+	api := GetSlackClient()
+	api.UploadFile(fileParams)
 }
 
 func DownloadSubmission(fileSharedEvent Event) {

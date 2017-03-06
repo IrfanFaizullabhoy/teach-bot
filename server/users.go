@@ -163,10 +163,27 @@ func GetInstructors() []User {
 	return teachers
 }
 
+func GetInstructorChannels() []string {
+	instructors := GetInstructors()
+	var instructorChannels []string
+	for _, instructor := range instructors {
+		instructorChannels = append(instructorChannels, instructor.ChannelID)
+	}
+	return instructorChannels
+}
+
 func GetStudents() []User {
 	var students []User
 	db.Where("role = ?", "teacher").Find(&students)
 	return students
+}
+
+func InitializeStudentMap() {
+	StudentMap = make(map[string]User)
+	students := GetStudents()
+	for _, student := range students {
+		StudentMap[student.ID] = student
+	}
 }
 
 func isTeacher(userID string) bool {
