@@ -9,11 +9,9 @@ import (
 	"github.com/nlopes/slack"
 )
 
-//var EventChannel chan Event
-
 func Run() {
-	WelcomeToTeamTest("U3YF3JM35")
 	InitializeStudentMap()
+	//RegisterAll()
 
 	//SendTestMessage(api, "#teacher-test", "Here to help...")
 	//EventChannel = make(chan Event)
@@ -21,7 +19,6 @@ func Run() {
 
 func GetSlackClient() *slack.Client {
 	token := os.Getenv("SLACK_TOKEN")
-	fmt.Println("connecting to client w token" + token)
 	api := slack.New(token)
 	return api
 }
@@ -34,18 +31,6 @@ func PostAnonymousQuestion(api *slack.Client, channelName string, messageText st
 		fmt.Printf("%s\n", err)
 		return
 	}
-}
-
-func GroupExists(groupName string) (bool, string) {
-	api := GetSlackClient()
-	groups, err := api.GetGroups(false)
-	check(err)
-	for _, group := range groups {
-		if group.Name == groupName {
-			return true, group.ID
-		}
-	}
-	return false, ""
 }
 
 func ChannelExists(channelName string) (bool, string) {
@@ -62,16 +47,16 @@ func ChannelExists(channelName string) (bool, string) {
 
 func StartInstructorConversation(userID, name string) {
 	api := GetSlackClient()
-	exists, groupID := GroupExists("instructors-and-" + name)
-	if !exists {
+	groupID := FindGroupByName("instructors-and-" + name)
+	if groupID == "" {
 		group, err := api.CreateGroup("instructors-and-" + name)
 		instructors := GetInstructors()
 		for _, instructor := range instructors {
 			_, _, err = api.InviteUserToGroup(group.ID, instructor.ID)
 			check(err)
-			groupID = group.ID
 		}
-		_, _, err = api.InviteUserToGroup(group.Name, userID)
+		groupID = group.ID
+		_, _, err = api.InviteUserToGroup(groupID, userID)
 		check(err)
 	}
 	api.OpenGroup(groupID)

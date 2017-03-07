@@ -12,6 +12,13 @@ import (
 
 var StudentMap map[string]User
 
+func RegisterAll() {
+	userIDs := FindAllUserIDs()
+	for _, id := range userIDs {
+		WelcomeToTeamByID(id)
+	}
+}
+
 func ParseStudentName(userInput string) (string, string, error) {
 	names := strings.Split(userInput, " ")
 	if len(names) == 3 &&
@@ -107,7 +114,20 @@ func GetTeachBotID() string {
 	return ""
 }
 
-func WelcomeToTeamTest(userID string) {
+func FindAllUserIDs() []string {
+	api := GetSlackClient()
+	users, err := api.GetUsers()
+	check(err)
+	var allUserIDs []string
+	for _, user := range users {
+		if !user.IsBot {
+			allUserIDs = append(allUserIDs, user.ID)
+		}
+	}
+	return allUserIDs
+}
+
+func WelcomeToTeamByID(userID string) {
 	api := GetSlackClient()
 	userInfo, err := api.GetUserInfo(userID)
 	check(err)
@@ -146,11 +166,15 @@ func FindGroupByName(groupName string) string {
 }
 
 func AddToDatabase(StudentOrTeacherAction slack.AttachmentActionCallback) {
+	api := GetSlackClient()
 	user := StudentOrTeacherAction.User
 	if len(StudentOrTeacherAction.Actions) == 1 {
 		if StudentOrTeacherAction.Actions[0].Name == "student" {
 			FillUserInfo(user, "student", db)
 		} else {
+			irfan := GetUser("U3YF3JM35")
+			params := slack.PostMessageParameters{}
+			api.PostMessage(irfan.ChannelID, "user: "+StudentOrTeacherAction.User.Name+"registered as a teacher", params)
 			FillUserInfo(user, "teacher", db)
 		}
 	}

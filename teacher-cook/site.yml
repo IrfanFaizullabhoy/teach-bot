@@ -3,7 +3,4 @@
   hosts: api-dev
   become: true
   roles:
-    - common
-    - docker
-    - credentials
     - api

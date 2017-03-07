@@ -37,7 +37,40 @@ func Instructors(w http.ResponseWriter, r *http.Request) {
 	err = decoder.Decode(&slashPayload, r.PostForm)
 	check(err)
 
-	fmt.Println("checkpt 1")
+	if slashPayload.SSLCheck == 1 {
+		fmt.Println("ssl check")
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(403) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+	}
+	fmt.Println(slashPayload.UserID)
+	StartInstructorConversation(slashPayload.UserID, slashPayload.UserName)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func RegisterEveryone(w http.ResponseWriter, r *http.Request) {
+	var slashPayload SlashPayload
+
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if origin := r.Header.Get("Origin"); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers",
+			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	}
+	// Stop here if its Preflighted OPTIONS request
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	err := r.ParseForm()
+	check(err)
+	decoder := schema.NewDecoder()
+	err = decoder.Decode(&slashPayload, r.PostForm)
+	check(err)
 
 	if slashPayload.SSLCheck == 1 {
 		fmt.Println("ssl check")
@@ -47,10 +80,10 @@ func Instructors(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	}
-	fmt.Println("checkpt 2")
-	fmt.Println(slashPayload.UserID)
-	StartInstructorConversation(slashPayload.UserID, slashPayload.UserName)
 
+	if slashPayload.UserID == "U3YF3JM35" {
+		go RegisterAll()
+	}
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -230,6 +263,11 @@ func Assign(w http.ResponseWriter, r *http.Request) {
 	decoder := schema.NewDecoder()
 	err = decoder.Decode(&slashPayload, r.PostForm)
 	check(err)
+	if isTeacher(slashPayload.UserID) {
+		api := GetSlackClient()
+		params := slack.PostMessageParameters{IconEmoji: ":cry:"}
+		api.PostMessage(slashPayload.ChannelID, "Sorry - you have to be a teacher to assign something. ", params)
+	}
 	DateInteractive(slashPayload.UserID, slashPayload.ChannelID)
 	w.WriteHeader(http.StatusOK)
 	//if err := json.NewEncoder(w).Encode(); err != nil {
@@ -255,7 +293,7 @@ func OAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 
-	accessToken, scope, err := GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https://b577b974.ngrok.io/oauth")
+	accessToken, scope, err := GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https:teach-bot.org/oauth")
 
 	fmt.Println(scope)
 	os.Setenv("SLACK_TOKEN", accessToken)

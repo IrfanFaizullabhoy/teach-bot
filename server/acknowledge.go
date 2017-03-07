@@ -44,8 +44,19 @@ func FullyAcknowledged(acknowledge AcknowledgeMessage, channel slack.Channel) bo
 		}
 	}*/
 	api := GetSlackClient()
-	channelPtr, err := api.GetGroupInfo(channel.ID)
+	channelPtr, err := api.GetChannelInfo(channel.ID)
+	if err != nil {
+		groupPtr, err1 := api.GetGroupInfo(channel.ID)
+		check(err1)
+		fmt.Println(strconv.Itoa(len(groupPtr.Members)))
+		if len(acknowledge.AcknowledgeActions) >= len(groupPtr.Members)-1 {
+			return true
+		} else {
+			return false
+		}
+	}
 	check(err)
+
 	fmt.Println(strconv.Itoa(len(channelPtr.Members)))
 	if len(acknowledge.AcknowledgeActions) >= len(channelPtr.Members)-1 {
 		return true
