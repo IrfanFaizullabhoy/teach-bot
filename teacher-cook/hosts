@@ -1,2 +1,2 @@
 [apiservers]
-api-dev ansible_host=54.218.65.59 ansible_user=ubuntu ansible_ssh_private_key_file=private/teach-bot.pem
+api-dev ansible_host=52.43.146.226 ansible_user=ubuntu ansible_ssh_private_key_file=private/teach-bot.pem

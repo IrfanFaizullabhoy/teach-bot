@@ -8,7 +8,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"strconv"
+	//"strconv"
 	"strings"
 
 	"github.com/nlopes/slack"
@@ -30,6 +30,7 @@ func CollectSubmissions(assignment Assignment) {
 	var submissions []Submission
 	db.Model(&assignment).Related(&submissions, "Submissions")
 	assignment.Submissions = submissions
+	SubmissionReport(assignment)
 }
 
 func SubmissionReport(assignment Assignment) {
@@ -72,18 +73,20 @@ func SubmissionReport(assignment Assignment) {
 
 	channels := GetInstructorChannels()
 	fileParams := slack.FileUploadParameters{File: path, Filetype: ".zip", Filename: info.Name(), Channels: channels}
-	api := GetSlackClient()
-	api.UploadFile(fileParams)
+	team := GetTeam(assignment.TeamID)
+	botConn := slack.New(team.BotToken)
+	botConn.UploadFile(fileParams)
 }
 
-func DownloadSubmission(fileSharedEvent Event) {
-	api := GetSlackClient()
-	file, _, _, err := api.GetFileInfo(fileSharedEvent.File.ID, 1, 1) //returns file with one comment/onepage
+func DownloadSubmission(fileSharedEvent Event, teamID string) {
+	team := GetTeam(teamID)
+	botConn := slack.New(team.BotToken)
+	file, _, _, err := botConn.GetFileInfo(fileSharedEvent.File.ID, 1, 1) //returns file with one comment/onepage
 	check(err)
 
 	//FIND IT IN THE DB
 	user := GetUser(file.User)
-	submission := FindSubmission(file.User, user.ChannelID, file.Name)
+	submission := FindSubmission(file.User, user.ChannelID, file.Name, team)
 
 	// GOOGLE DOC
 	if strings.Contains(file.URLPrivate, "google.com") {
@@ -126,20 +129,20 @@ func DownloadSubmission(fileSharedEvent Event) {
 	//ConfirmAndSendAssignment(assignment)
 }
 
-func FindSubmission(userID, channelID, fileName string) Submission {
-	api := GetSlackClient()
+func FindSubmission(userID, channelID, fileName string, team Team) Submission {
 	var submissions []Submission
 	params := slack.PostMessageParameters{}
-	db.Where("user_id = ? AND channel_id = ? AND submitted = ?", userID, channelID, false).Find(&submissions)
+	botConn := slack.New(team.BotToken)
+	db.Where("user_id = ? AND channel_id = ? AND team_id = ? AND submitted = ?", userID, channelID, team.TeamID, false).Find(&submissions)
 	if len(submissions) == 1 {
 		user := GetUser(userID)
-		api.PostMessage(user.ChannelID, "Downloading the file: `"+fileName+"`", params)
+		botConn.PostMessage(user.ChannelID, "Downloading the file: `"+fileName+"`", params)
 		return submissions[0]
 	} else if len(submissions) == 0 {
 		return submissions[0]
 	} else {
-		fmt.Println(userID)
-		fmt.Println("more than one submission not updated... " + strconv.Itoa(len(submissions)))
+		//fmt.Println(userID)
+		//fmt.Println("more than one submission not updated... " + strconv.Itoa(len(submissions)))
 		//return WhichAssignment(userID, submissions)
 		return submissions[0]
 	}

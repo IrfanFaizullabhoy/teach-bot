@@ -81,4 +81,10 @@ var routes = Routes{
 		"/acknowledge",
 		Acknowledge,
 	},
+	Route{
+		"RegisterEveryone",
+		"POST",
+		"/registerEveryone",
+		RegisterEveryone,
+	},
 }

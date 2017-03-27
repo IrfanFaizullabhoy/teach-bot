@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"os"
+	//"os"
 
 	"github.com/gorilla/schema"
 	"github.com/nlopes/slack"
@@ -45,8 +45,7 @@ func Instructors(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	}
-	fmt.Println(slashPayload.UserID)
-	StartInstructorConversation(slashPayload.UserID, slashPayload.UserName)
+	StartInstructorConversation(slashPayload.UserID, slashPayload.UserName, slashPayload.TeamID)
 
 	w.WriteHeader(http.StatusOK)
 }
@@ -80,9 +79,9 @@ func RegisterEveryone(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	}
-
-	if slashPayload.UserID == "U3YF3JM35" {
-		go RegisterAll()
+	team := GetTeam(slashPayload.TeamID)
+	if slashPayload.UserID == team.InstallerID {
+		go RegisterAll(team)
 	}
 	w.WriteHeader(http.StatusOK)
 }
@@ -128,11 +127,9 @@ func AnonymousQuestion(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	}
-	api := GetSlackClient()
-	_, channelID := ChannelExists("teacher-test")
-	channelName := channelID
+	teamID := slashPayload.TeamID
 	messageText := slashPayload.Text
-	PostAnonymousQuestion(api, channelName, messageText)
+	PostAnonymousQuestion(messageText, teamID)
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -167,18 +164,30 @@ func Acknowledge(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	api := GetSlackClient()
+	teamID := slashPayload.TeamID
+	team := GetTeam(teamID)
+	botConn := slack.New(team.BotToken)
 
 	//Respond with acknowledge button
 	params := slack.PostMessageParameters{}
 	attachment := slack.Attachment{CallbackID: "acknowledge", Fallback: "acknowledge service not working properly"}
 	attachment.Actions = append(attachment.Actions, slack.AttachmentAction{Name: "acknowledge", Text: "Acknowledge", Type: "button"})
 	params.Attachments = append(params.Attachments, attachment)
-	channelID, ts, _ := api.PostMessage(slashPayload.ChannelID, slashPayload.Text, params)
+	channelID, ts, _ := botConn.PostMessage(slashPayload.ChannelID, slashPayload.Text+" - @"+slashPayload.UserName, params)
 	acknowledgeMsg := AcknowledgeMessage{UserID: slashPayload.UserID, Timestamp: ts, ChannelID: channelID}
 	db.Create(&acknowledgeMsg)
-	acknowledgeAction := AcknowledgeAction{AckID: acknowledgeMsg.ID, UserID: slashPayload.UserID, Value: ""}
+
+	/*
+		params1 := slack.PostMessageParameters{}
+		attachment1 := slack.Attachment{CallbackID: "remind", Fallback: "remind service not working properly"}
+		attachment1.Actions = append(attachment1.Actions, slack.AttachmentAction{Name: "remind", Text: "Remind", Type: "button"})
+		params1.Attachments = append(params1.Attachments, attachment1)
+		api.PostMessage(GetUser(slashPayload.UserID).ChannelID, "Click the `Remind` Button to remind your friends about the following announcement ```"+acknowledgeMsg.Text+"```", params1)
+	*/
+
+	acknowledgeAction := AcknowledgeAction{AckID: acknowledgeMsg.ID, UserID: slashPayload.UserID, TeamID: team.TeamID, Value: ""}
 	db.Create(&acknowledgeAction)
+
 	w.WriteHeader(http.StatusOK)
 }
 
@@ -233,9 +242,9 @@ func Events(w http.ResponseWriter, r *http.Request) {
 	case "event_callback":
 		switch event.Event.Type {
 		case "file_shared": //files:read
-			HandleFileShared(event.Event)
+			HandleFileShared(event.Event, event.TeamID)
 		case "team_join": //users:read
-			WelcomeToTeam(event.Event)
+			WelcomeToTeam(event.Event, event.TeamID)
 		}
 	}
 
@@ -263,16 +272,8 @@ func Assign(w http.ResponseWriter, r *http.Request) {
 	decoder := schema.NewDecoder()
 	err = decoder.Decode(&slashPayload, r.PostForm)
 	check(err)
-	if isTeacher(slashPayload.UserID) {
-		api := GetSlackClient()
-		params := slack.PostMessageParameters{IconEmoji: ":cry:"}
-		api.PostMessage(slashPayload.ChannelID, "Sorry - you have to be a teacher to assign something. ", params)
-	}
-	DateInteractive(slashPayload.UserID, slashPayload.ChannelID)
+	DateInteractive(slashPayload.UserID, slashPayload.ChannelID, slashPayload.TeamID)
 	w.WriteHeader(http.StatusOK)
-	//if err := json.NewEncoder(w).Encode(); err != nil {
-	//	panic(err)
-	//}
 }
 
 // Takes in a Student object and adds it to the Database
@@ -293,13 +294,13 @@ func OAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 
-	accessToken, scope, err := GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https:teach-bot.org/oauth")
+	GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https://1f57f79d.ngrok.io/oauth")
 
-	fmt.Println(scope)
-	os.Setenv("SLACK_TOKEN", accessToken)
-	check(err)
-	fmt.Println("set the slack token to " + accessToken)
-	fmt.Println(code)
+	//fmt.Println(scope)
+	//os.Setenv("SLACK_TOKEN", accessToken)
+	//check(err)
+	//fmt.Println("set the slack token to " + accessToken)
+	fmt.Println("code is" + code)
 	fmt.Println(state)
 	// if state != remembered state
 	w.WriteHeader(http.StatusOK)
@@ -339,7 +340,11 @@ func Interactive(w http.ResponseWriter, r *http.Request) {
 		if err := json.NewEncoder(w).Encode(err); err != nil {
 			panic(err)
 		}
+		return
 	}
+	teamID := attachmentActionCallback.Team.ID
+	team := GetTeam(teamID)
+	botConn := slack.New(team.BotToken)
 
 	switch attachmentActionCallback.CallbackID {
 	case "student_or_teacher":
@@ -348,6 +353,12 @@ func Interactive(w http.ResponseWriter, r *http.Request) {
 		HandleDate(attachmentActionCallback)
 	case "acknowledge":
 		AcknowledgeCallback(attachmentActionCallback)
+	case "reminder":
+		botConn.PostMessage(attachmentActionCallback.Channel.ID, "Great I'll send you a few reminders as the due date approaches!", slack.PostMessageParameters{})
+	case "reminderAssignment":
+		botConn.PostMessage(attachmentActionCallback.Channel.ID, "Got it -- I'll let them know", slack.PostMessageParameters{})
+		//case "remind":
+		//	RemindCallback(attachmentActionCallback)
 	}
 
 	//fmt.Println(attachmentActionCallback)
@@ -360,6 +371,14 @@ func GetOAuthToken(clientID, clientSecret, code, redirectURI string) (accessToke
 	if err != nil {
 		return "", "", err
 	}
+	var team Team
+	team.TeamID = response.TeamID
+	team.InstallerID = response.UserID
+	team.Token = response.AccessToken
+	team.BotToken = response.Bot.BotAccessToken
+	team.BotID = response.Bot.BotUserID
+	db.Create(&team)
+	//fmt.Println("bot token is:" + response.Bot.BotAccessToken + " " + response.Bot.BotUserID)
 	return response.AccessToken, response.Scope, nil
 }
 
@@ -368,6 +387,7 @@ func GetOAuthResponse(clientID, clientSecret, code, redirectURI string) (resp *O
 		"client_id":     {clientID},
 		"client_secret": {clientSecret},
 		"code":          {code},
+		"scope":         {"bot"},
 		"redirect_uri":  {redirectURI},
 	}
 
@@ -376,7 +396,6 @@ func GetOAuthResponse(clientID, clientSecret, code, redirectURI string) (resp *O
 
 	body, err := ioutil.ReadAll(response.Body)
 	check(err)
-
 	var oAuthResponse OAuthResponse
 	if err = json.Unmarshal(body, &oAuthResponse); err != nil {
 		panic(err)

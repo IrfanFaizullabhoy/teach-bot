@@ -14,6 +14,7 @@ type User struct {
 	IsBot     bool              `json:"is_bot"`
 	Profile   slack.UserProfile `json:"profile"`
 	Role      string            `json:"role"`
+	TeamID    string            `json:"team_id"`
 }
 
 type UserTeam struct {
@@ -31,6 +32,16 @@ type Assignment struct {
 	UserID      string       `json:"user_id"`
 	Downloaded  bool         `json:"downloaded"`
 	Submissions []Submission `gorm:"ForeignKey:AssignmentID"`
+	TeamID      string       `json:"team_id"`
+}
+
+type Team struct {
+	gorm.Model
+	TeamID      string `json:"team_id"`
+	Token       string `json:"team_token"`
+	InstallerID string `json:"installer_id"`
+	BotToken    string `json:"bot_token"`
+	BotID       string `json:"bot_id"`
 }
 
 type Submission struct {
@@ -43,6 +54,7 @@ type Submission struct {
 	FilePath      string `json:"filepath"`
 	Link          string `json:"link"`
 	LastSubmitted string `json:"last_submitted"`
+	TeamID        string `json:"team_id"`
 }
 
 type AcknowledgeMessage struct {
@@ -52,6 +64,7 @@ type AcknowledgeMessage struct {
 	ChannelID          string              `json:"channel_id"`
 	Timestamp          string              `json:"timestamp"`
 	AcknowledgeActions []AcknowledgeAction `gorm:"ForeignKey:AckID"`
+	TeamID             string              `json:"team_id"`
 }
 
 type AcknowledgeAction struct {
@@ -59,6 +72,7 @@ type AcknowledgeAction struct {
 	AckID  uint   `json:"ack_id"`
 	UserID string `json:"user_id"`
 	Value  string `json:"value"`
+	TeamID string `json:"team_id"`
 }
 
 type LoginMsg struct {
