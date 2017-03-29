@@ -71,7 +71,11 @@ func SubmissionReport(assignment Assignment) {
 	path, err := filepath.Abs(filepath.Dir(info.Name()))
 	path = path + newfile.Name()
 
-	channels := GetInstructorChannels()
+	instructors := GetInstructors(assignment.TeamID)
+	var channels []string
+	for _, instructor := range instructors {
+		channels = append(channels, instructor.ChannelID)
+	}
 	fileParams := slack.FileUploadParameters{File: path, Filetype: ".zip", Filename: info.Name(), Channels: channels}
 	team := GetTeam(assignment.TeamID)
 	botConn := slack.New(team.BotToken)

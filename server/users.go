@@ -217,20 +217,11 @@ func AddToDatabase(StudentOrTeacherAction slack.AttachmentActionCallback) {
 	}
 }
 
-func GetInstructors() []User {
+func GetInstructors(teamID string) []User {
 	var teachers []User
-	db.Where("role = ?", "teacher").Find(&teachers)
+	db.Where("role = ? AND team_id = ?", "teacher", teamID).Find(&teachers)
 	//instructors := []string{"U3YKBAK1S", "U42EVJF7E", "U3YK6EPV0"}
 	return teachers
-}
-
-func GetInstructorChannels() []string {
-	instructors := GetInstructors()
-	var instructorChannels []string
-	for _, instructor := range instructors {
-		instructorChannels = append(instructorChannels, instructor.ChannelID)
-	}
-	return instructorChannels
 }
 
 func GetStudents() []User {

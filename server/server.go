@@ -100,7 +100,7 @@ func StartInstructorConversation(userID, name, teamID string) {
 	groupID := FindGroupByName("instructors-and-"+name, appConn)
 	if groupID == "" {
 		group, err := appConn.CreateGroup("instructors-and-" + name)
-		instructors := GetInstructors()
+		instructors := GetInstructors(teamID)
 		for _, instructor := range instructors {
 			_, _, err = appConn.InviteUserToGroup(group.ID, instructor.ID)
 			check(err)
