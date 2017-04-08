@@ -34,7 +34,9 @@ func DownloadAssignment(fileSharedEvent Event, teamID string) {
 
 	//FIND IT IN THE DB
 	assignment := FindAssignment(file.User, file.Name, team)
-
+	if assignment.Submissions == nil {
+		return
+	}
 	// GOOGLE DOC
 	if strings.Contains(file.URLPrivate, "google.com") {
 		fmt.Println("Google Doc")

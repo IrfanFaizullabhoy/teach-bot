@@ -87,4 +87,16 @@ var routes = Routes{
 		"/registerEveryone",
 		RegisterEveryone,
 	},
+	Route{
+		"EnterGrades",
+		"POST",
+		"/enterGrades",
+		EnterGrades,
+	},
+	Route{
+		"GetGrades",
+		"POST",
+		"/getGrades",
+		GetGrades,
+	},
 }

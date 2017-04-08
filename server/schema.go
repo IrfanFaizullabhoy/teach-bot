@@ -33,6 +33,7 @@ type Assignment struct {
 	Downloaded  bool         `json:"downloaded"`
 	Submissions []Submission `gorm:"ForeignKey:AssignmentID"`
 	TeamID      string       `json:"team_id"`
+	MaxPoints   float64      `json:"max_points"`
 }
 
 type Team struct {
@@ -46,15 +47,26 @@ type Team struct {
 
 type Submission struct {
 	gorm.Model
-	AssigmentID   uint   `json:"assignment_id"`
-	UserID        string `json:"user_id"`
-	ChannelID     string `json:"channel_id"`
-	Submitted     bool   `json:"submitted"`
-	FileName      string `json:"file_name"`
-	FilePath      string `json:"filepath"`
-	Link          string `json:"link"`
-	LastSubmitted string `json:"last_submitted"`
-	TeamID        string `json:"team_id"`
+	AssigmentID    uint    `json:"assignment_id"`
+	AssignmentName string  `json:"assignment_name"`
+	UserID         string  `json:"user_id"`
+	ChannelID      string  `json:"channel_id"`
+	Submitted      bool    `json:"submitted"`
+	FileName       string  `json:"file_name"`
+	FilePath       string  `json:"filepath"`
+	Link           string  `json:"link"`
+	LastSubmitted  string  `json:"last_submitted"`
+	TeamID         string  `json:"team_id"`
+	Graded         bool    `json:"graded"`
+	MaxPoints      float64 `json:"max_points"`
+	Score          float64 `json:"score"`
+}
+
+type ManualGrade struct {
+	Name             string    `json:"name"`
+	MaxPoints        float64   `json:"max_points"`
+	UserIDs          []string  `json:"user_ids"`
+	AssignmentGrades []float64 `json:"assignment_grades"`
 }
 
 type AcknowledgeMessage struct {

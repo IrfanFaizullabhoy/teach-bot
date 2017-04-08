@@ -22,7 +22,7 @@ func SetupSubmissions(assignment Assignment) {
 }
 
 func SetupSubmission(assignment Assignment, user User) {
-	submission := Submission{AssigmentID: assignment.ID, UserID: user.ID, ChannelID: user.ChannelID, Submitted: false}
+	submission := Submission{AssigmentID: assignment.ID, UserID: user.ID, ChannelID: user.ChannelID, Submitted: false, Graded: false, MaxPoints: assignment.MaxPoints}
 	db.Create(&submission)
 }
 
@@ -129,8 +129,6 @@ func DownloadSubmission(fileSharedEvent Event, teamID string) {
 	submission.Submitted = true
 	submission.FileName = file.Name
 	db.Save(&submission)
-
-	//ConfirmAndSendAssignment(assignment)
 }
 
 func FindSubmission(userID, channelID, fileName string, team Team) Submission {

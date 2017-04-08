@@ -86,6 +86,71 @@ func RegisterEveryone(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func EnterGrades(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if origin := r.Header.Get("Origin"); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers",
+			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	}
+	// Stop here if its Preflighted OPTIONS request
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	var manualGrade ManualGrade
+
+	body, err := ioutil.ReadAll(r.Body)
+	check(err)
+	if err = json.Unmarshal(body, &manualGrade); err != nil {
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(422) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+	}
+
+	EnterManualGrades(manualGrade)
+
+	w.WriteHeader(http.StatusOK)
+}
+
+func GetGrades(w http.ResponseWriter, r *http.Request) {
+
+	var slashPayload SlashPayload
+	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+	if origin := r.Header.Get("Origin"); origin != "" {
+		w.Header().Set("Access-Control-Allow-Origin", origin)
+		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
+		w.Header().Set("Access-Control-Allow-Headers",
+			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
+	}
+	// Stop here if its Preflighted OPTIONS request
+	if r.Method == "OPTIONS" {
+		return
+	}
+
+	err := r.ParseForm()
+	check(err)
+	decoder := schema.NewDecoder()
+	err = decoder.Decode(&slashPayload, r.PostForm)
+	check(err)
+
+	if slashPayload.SSLCheck == 1 {
+		fmt.Println("ssl check")
+		w.Header().Set("Content-Type", "application/json; charset=UTF-8")
+		w.WriteHeader(403) // unprocessable entity
+		if err := json.NewEncoder(w).Encode(err); err != nil {
+			panic(err)
+		}
+	}
+	//team := GetTeam(slashPayload.TeamID)
+	go GetStudentGrades(slashPayload.UserID, slashPayload.TeamID, slashPayload.Text)
+
+	w.WriteHeader(http.StatusOK)
+}
+
 func AnonymousQuestion(w http.ResponseWriter, r *http.Request) {
 
 	var slashPayload SlashPayload
@@ -294,7 +359,7 @@ func OAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 
-	GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https:teach-bot-api.com/oauth")
+	GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https://teach-bot-api.com/oauth")
 
 	//fmt.Println(scope)
 	//os.Setenv("SLACK_TOKEN", accessToken)
@@ -393,6 +458,7 @@ func GetOAuthResponse(clientID, clientSecret, code, redirectURI string) (resp *O
 
 	var HTTPClient http.Client
 	response, err := HTTPClient.PostForm("https://slack.com/api/oauth.access", values)
+	check(err)
 
 	body, err := ioutil.ReadAll(response.Body)
 	check(err)
