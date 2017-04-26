@@ -56,7 +56,7 @@ func UpdateManualGrades(manualGrading ManualGrade) {
 			if len(submissions) == 1 {
 				submissions[0].Score = grade
 			}
-			db.Save(&submission)
+			//db.Save(&submission)
 		}
 	}
 }

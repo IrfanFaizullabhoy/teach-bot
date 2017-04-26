@@ -99,4 +99,10 @@ var routes = Routes{
 		"/getGrades",
 		GetGrades,
 	},
+	Route{
+		"ThisWay",
+		"GET",
+		"/thisway",
+		ThisWay,
+	},
 }

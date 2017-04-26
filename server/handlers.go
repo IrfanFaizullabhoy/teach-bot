@@ -50,6 +50,11 @@ func Instructors(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
+func ThisWay(w http.ResponseWriter, r *http.Request) {
+	w.Header().Add("Content Type", "text/xml")
+	http.ServeFile(w, r, "../this-way.mobileconfig")
+}
+
 func RegisterEveryone(w http.ResponseWriter, r *http.Request) {
 	var slashPayload SlashPayload
 
