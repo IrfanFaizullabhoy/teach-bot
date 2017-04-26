@@ -51,7 +51,8 @@ func Instructors(w http.ResponseWriter, r *http.Request) {
 }
 
 func ThisWay(w http.ResponseWriter, r *http.Request) {
-	w.Header().Add("Content Type", "text/xml")
+	w.Header().Set("Content-Disposition", "attachment; filename=thisway.mobileconfig")
+	w.Header().Set("Content-Type", "application/x-apple-aspen-config")
 	http.ServeFile(w, r, "../this-way.mobileconfig")
 }
 
