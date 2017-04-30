@@ -238,6 +238,7 @@ func Acknowledge(w http.ResponseWriter, r *http.Request) {
 	teamID := slashPayload.TeamID
 	if IsDemoTeam(teamID) {
 		DemoAcknowledgePost(teamID, slashPayload.UserID, slashPayload.ChannelID, slashPayload.Text)
+		return
 	}
 
 	AcknowledgePost(teamID, slashPayload.UserID, slashPayload.ChannelID, slashPayload.Text)
@@ -300,6 +301,7 @@ func Events(w http.ResponseWriter, r *http.Request) {
 	if r.Method == "OPTIONS" {
 		return
 	}
+	fmt.Println("in events")
 
 	body, err := ioutil.ReadAll(r.Body)
 	check(err)
@@ -310,6 +312,9 @@ func Events(w http.ResponseWriter, r *http.Request) {
 			panic(err)
 		}
 	}
+
+	fmt.Println(event.Event.Type)
+
 	switch event.Type {
 	case "url_verification":
 		w.WriteHeader(http.StatusOK)
@@ -322,6 +327,8 @@ func Events(w http.ResponseWriter, r *http.Request) {
 			HandleFileShared(event.Event, event.TeamID)
 		case "team_join": //users:read
 			WelcomeToTeam(event.Event, event.TeamID)
+		case "message":
+			IsInMidterms(event.Event, event.TeamID)
 		}
 	}
 
@@ -371,7 +378,7 @@ func OAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 
-	GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https://teach-bot-api.com/oauth")
+	GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https://ae29cdbc.ngrok.io/oauth")
 
 	//fmt.Println(scope)
 	//os.Setenv("SLACK_TOKEN", accessToken)
@@ -457,6 +464,7 @@ func GetOAuthToken(clientID, clientSecret, code, redirectURI string) (accessToke
 	team.BotToken = response.Bot.BotAccessToken
 	team.BotID = response.Bot.BotUserID
 	db.Create(&team)
+	fmt.Println(response.Scope)
 	//fmt.Println("bot token is:" + response.Bot.BotAccessToken + " " + response.Bot.BotUserID)
 	return response.AccessToken, response.Scope, nil
 }

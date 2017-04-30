@@ -230,9 +230,9 @@ func GetStudents() []User {
 	return students
 }
 
-func GetUsers() []User {
+func GetUsers(teamID string) []User {
 	var users []User
-	db.Find(&users)
+	db.Where("team_id = ?", teamID).Find(&users)
 	return users
 }
 

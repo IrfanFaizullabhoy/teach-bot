@@ -151,6 +151,7 @@ type Event struct {
 	User    string `json:"user"`
 	TS      string `json:"ts"`
 	File    File   `json:"file"`
+	Channel string `json:"channel"`
 }
 
 type File struct {

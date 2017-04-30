@@ -13,7 +13,7 @@ var TeamDemoMap map[string]bool
 func Run() {
 	InitializeStudentMap()
 	InitializeTeamMap()
-	InitializeTeamDemoMap()
+	InitializeDemoMaps()
 	go CheckPresence("", "")
 	//SendTestMessage(api, "#teacher-test", "Here to help...")
 	//EventChannel = make(chan Event)
@@ -33,9 +33,13 @@ func GetSlackBotClient() *slack.Client {
 }
 */
 
-func InitializeTeamDemoMap() {
+func InitializeDemoMaps() {
 	TeamDemoMap = make(map[string]bool)
 	TeamDemoMap["T577ZGT6J"] = true
+
+	teamIDtoTS = make(map[string]string)
+	teamIDtoChannelID = make(map[string]string)
+
 }
 
 func PostAnonymousQuestion(messageText, teamID string) {
@@ -52,7 +56,7 @@ func PostAnonymousQuestion(messageText, teamID string) {
 	if channelID == "" { // DOESNT EXIST YET, invite everyone
 		channel, _ := appConn.CreateChannel("questions")
 		appConn.SetChannelPurpose(channel.ID, "A Channel for you to ask questions that apply to the whole class, to ask anonymously type `/anonymousQuestion` followed by your question")
-		for _, user := range GetUsers() {
+		for _, user := range GetUsers(teamID) {
 			appConn.InviteUserToChannel(channel.ID, user.ID)
 		}
 		channelID = channel.ID

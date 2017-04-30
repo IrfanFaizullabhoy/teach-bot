@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"github.com/nlopes/slack"
+	"time"
 )
 
 //Create User & Team
@@ -11,11 +12,15 @@ import (
 //Install teachbot to team
 // registerAll
 //Same username and password
+// create field-trips channel
+// add teach bot to midterm
 
 //Create Google Drive & Link for Homework
 //allow google drive to import file
 
 //Add Team to DemoTeams map
+var teamIDtoTS map[string]string
+var teamIDtoChannelID map[string]string
 
 func IsDemoTeam(teamID string) bool {
 	return TeamDemoMap[teamID]
@@ -71,18 +76,29 @@ func DemoDownloadAssignment(fileSharedEvent Event, teamID string) {
 	// Sends Picture of what was sent to users
 	team := GetTeam(teamID)
 	botConn := slack.New(team.BotToken)
-	fmt.Println("in demo download assignment")
-	file, _, _, err := botConn.GetFileInfo(fileSharedEvent.File.ID, 1, 1)
+	screenshotFileName := "assignment1name"
+
+	file, _, _, err := botConn.GetFileInfo(fileSharedEvent.File.ID, 1, 1) //returns file with one comment/onepage
 	check(err)
+
+	if file.Name == screenshotFileName {
+		return
+	}
+
+	fmt.Println("in demo download assignment")
 	fileChannelID := GetUser(file.User).ChannelID
 	fmt.Println(fileChannelID)
 	botConn.PostMessage(fileChannelID, "Awesome, sharing with students now!", slack.PostMessageParameters{})
 	fmt.Println("done")
 	screenshotFilePath := "../mounted-volume/sample.png"
-	var screenshotFileName string
 	params := slack.FileUploadParameters{File: screenshotFilePath, Filename: screenshotFileName, Channels: []string{fileChannelID}, InitialComment: "This is what students are seeing right now!", Title: "Student's Perspective"}
 	_, err = botConn.UploadFile(params)
 	check(err)
+
+	go func() {
+		time.Sleep(7 * time.Second)
+		DemoAcknowledge(teamID, team.InstallerID)
+	}()
 	//DemoViewSubmissions(fileChannelID, teamID)
 	return
 }
@@ -120,15 +136,44 @@ func DemoHandleViewSubmission(attachmentSubmissionViewAction slack.AttachmentAct
 	}
 }
 
-func DemoAcknowledge() {
+func DemoAcknowledge(teamID, userID string) {
+	// IN TEACH-BOT PRIV CHANNEL
+	fmt.Println("in this one")
+	team := GetTeam(teamID)
+	botConn := slack.New(team.BotToken)
+	user := GetUser(userID)
+	fieldTripID := GetOrCreateChannel("field-trips", teamID)
+	fieldTrip := "Next we will use the `/acknowledge` feature to make an announcement and see which students have seen the announcement in real time. \n *Go to the* #field-trips *channel to try it out.*"
+	botConn.PostMessage(user.ChannelID, fieldTrip, slack.PostMessageParameters{LinkNames: 1})
 
-	"Next we will use the /acknowledge feature to make an announcement and see which students have seen the announcement in real time. \nType /acknowledge followed by an announcement you want to make. \n For example: /acknowledge the British are coming."
+	// IN #FIELD-TRIPS
+	hogwarts := "Type `/acknowledge` followed by an announcement you want to make. \n This will post the announcement in the current channel. *For example:* \n `/acknowledge the dress code for next week's trip to Hogwarts is wizard-casual`."
+	botConn.PostMessage(fieldTripID, hogwarts, slack.PostMessageParameters{})
+}
+
+func GetOrCreateChannel(channelName, teamID string) string {
+	team := GetTeam(teamID)
+	appConn := slack.New(team.Token)
+	channels, err := appConn.GetChannels(true)
+	check(err)
+	for _, channel := range channels {
+		if channel.Name == channelName {
+			return channel.ID
+		}
+	}
+	channel, err := appConn.CreateChannel(channelName)
+	check(err)
+	for _, user := range GetUsers(teamID) {
+		appConn.InviteUserToChannel(channel.ID, user.ID)
+	}
+	return channel.ID
 }
 
 func DemoAcknowledgePost(teamID, userID, channelID, text string) {
 	team := GetTeam(teamID)
 	botConn := slack.New(team.BotToken)
 	user := GetUser(userID)
+	fmt.Println("demo ack post")
 
 	//Respond with acknowledge button
 	params := slack.PostMessageParameters{EscapeText: true}
@@ -136,7 +181,39 @@ func DemoAcknowledgePost(teamID, userID, channelID, text string) {
 	attachment.Actions = append(attachment.Actions, slack.AttachmentAction{Name: "acknowledge", Text: "Acknowledge", Type: "button"})
 	params.Attachments = append(params.Attachments, attachment)
 	botConn.PostMessage(channelID, text+" - @"+user.Name, params)
+
+	go func() {
+		channel, ts, err := botConn.PostMessage(channelID, "Responses so far: 0/5", slack.PostMessageParameters{})
+		check(err)
+		teamIDtoTS[teamID] = ts
+		teamIDtoChannelID[teamID] = channelID
+		time.Sleep(1 * time.Second)
+		botConn.UpdateMessage(channel, ts, "Responses so far: 1/5")
+		time.Sleep(500 * time.Millisecond)
+		botConn.UpdateMessage(channel, ts, "Responses so far: 2/5")
+		time.Sleep(900 * time.Millisecond)
+		botConn.UpdateMessage(channel, ts, "Responses so far: 3/5")
+		time.Sleep(2 * time.Second)
+		botConn.PostMessage(channelID, "*Let's look at another feature* while we're waiting for your students to finish their assignments and acknowledge your message.", slack.PostMessageParameters{})
+		time.Sleep(5 * time.Second)
+		midtermID := GetOrCreateChannel("midterm", teamID)
+		messageText := "i'm kinda embarrassed that I can't find this information, but what's the room number for the midterm?"
+		botConn.PostMessage(midtermID, "Someone posted an anonymous question: \n ```"+messageText+"```", slack.PostMessageParameters{})
+		time.Sleep(500 * time.Millisecond)
+		botConn.PostMessage(channelID, "It looks like a student has asked an anonymous question by using teach-bot's `/anonymousQuestion` feature. *Go to the* #midterm *channel* see what it is, and then answer. \n (hint: the answer is 42)", slack.PostMessageParameters{LinkNames: 1})
+	}()
 	//acknowledgeMsg := AcknowledgeMessage{UserID: userID, Timestamp: ts, ChannelID: channelID}
+}
+
+func IsInMidterms(MessageChannelEvent Event, teamID string) {
+	fmt.Println("hi")
+	team := GetTeam(teamID)
+	if MessageChannelEvent.User == team.InstallerID &&
+		MessageChannelEvent.Channel == GetOrCreateChannel("midterm", teamID) {
+		fmt.Println("done!")
+	} else {
+		return
+	}
 }
 
 /* Acknowledge flow
@@ -146,6 +223,6 @@ Notify all the students that there is a midterm with the following - see how the
 /acknowledge There will be a midterm in 2 weeks on Units 1 - 5 @channel !
 Click acknowledge when you get this!
 ```
-*/
+*/ //ttrttrrrerererr4ewë44
 
 //https://drive.google.com/open?id=0B38oEsv5Mt0-cC04NjJURWVvaDg
