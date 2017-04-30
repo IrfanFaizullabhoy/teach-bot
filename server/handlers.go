@@ -236,6 +236,12 @@ func Acknowledge(w http.ResponseWriter, r *http.Request) {
 	}
 
 	teamID := slashPayload.TeamID
+	if IsDemoTeam(teamID) {
+		DemoAcknowledgePost(teamID, slashPayload.UserID, slashPayload.ChannelID, slashPayload.Text)
+	}
+
+	AcknowledgePost(teamID, slashPayload.UserID, slashPayload.ChannelID, slashPayload.Text)
+
 	team := GetTeam(teamID)
 	botConn := slack.New(team.BotToken)
 
@@ -428,6 +434,8 @@ func Interactive(w http.ResponseWriter, r *http.Request) {
 		botConn.PostMessage(attachmentActionCallback.Channel.ID, "Great I'll send you a few reminders as the due date approaches!", slack.PostMessageParameters{})
 	case "reminderAssignment":
 		botConn.PostMessage(attachmentActionCallback.Channel.ID, "Got it -- I'll let them know", slack.PostMessageParameters{})
+	case "submission_type":
+		DemoHandleViewSubmission(attachmentActionCallback)
 		//case "remind":
 		//	RemindCallback(attachmentActionCallback)
 	}

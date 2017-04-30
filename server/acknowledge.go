@@ -37,6 +37,21 @@ func AcknowledgeCallback(attachmentAcknowledgeAction slack.AttachmentActionCallb
 	}
 }
 
+func AcknowledgePost(teamID, userID, channelID, text string) {
+	team := GetTeam(teamID)
+	botConn := slack.New(team.BotToken)
+	user := GetUser(userID)
+
+	//Respond with acknowledge button
+	params := slack.PostMessageParameters{EscapeText: true}
+	attachment := slack.Attachment{CallbackID: "acknowledge", Fallback: "acknowledge service not working properly"}
+	attachment.Actions = append(attachment.Actions, slack.AttachmentAction{Name: "acknowledge", Text: "Acknowledge", Type: "button"})
+	params.Attachments = append(params.Attachments, attachment)
+	channelID, ts, _ := botConn.PostMessage(channelID, text+" - @"+user.Name, params)
+	acknowledgeMsg := AcknowledgeMessage{UserID: userID, Timestamp: ts, ChannelID: channelID}
+	db.Create(&acknowledgeMsg)
+}
+
 /*func RemindCallback(attachmentAcknowledgeAction slack.AttachmentActionCallback) {
 	api := GetSlackClient()
 	userID := attachmentAcknowledgeAction.User.ID

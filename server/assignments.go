@@ -28,6 +28,13 @@ func HandleFileShared(fileSharedEvent Event, teamID string) {
 // ELSE RANDOM ASSIGNMENT [make sure its not to assign or collect]
 func DownloadAssignment(fileSharedEvent Event, teamID string) {
 	team := GetTeam(teamID)
+
+	//DEMO
+	if IsDemoTeam(teamID) {
+		DemoDownloadAssignment(fileSharedEvent, teamID)
+		return
+	}
+
 	botConn := slack.New(team.BotToken)
 	file, _, _, err := botConn.GetFileInfo(fileSharedEvent.File.ID, 1, 1) //returns file with one comment/onepage
 	check(err)
@@ -128,6 +135,10 @@ func WhichAssignment(userID string, assignments []Assignment) Assignment {
 
 func DateInteractive(userID, channelID, teamID string) {
 	team := GetTeam(teamID)
+	if IsDemoTeam(team.TeamID) {
+		DemoDateInteractive(userID, channelID, teamID)
+		return
+	}
 	botConn := slack.New(team.BotToken)
 	params := slack.NewPostMessageParameters()
 	attachment := slack.Attachment{CallbackID: "assignment_due", Fallback: "service not working properly"}
@@ -142,6 +153,11 @@ func DateInteractive(userID, channelID, teamID string) {
 
 func HandleDate(attachmentDateAction slack.AttachmentActionCallback) {
 	team := GetTeam(attachmentDateAction.Team.ID)
+	//DEMO
+	if IsDemoTeam(team.TeamID) {
+		DemoHandleDate(attachmentDateAction)
+		return
+	}
 	botConn := slack.New(team.BotToken)
 	if len(attachmentDateAction.Actions) == 1 {
 		if attachmentDateAction.Actions[0].Name == "monday" {

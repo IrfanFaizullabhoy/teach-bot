@@ -8,9 +8,13 @@ import (
 	"github.com/nlopes/slack"
 )
 
+var TeamDemoMap map[string]bool
+
 func Run() {
 	InitializeStudentMap()
 	InitializeTeamMap()
+	InitializeTeamDemoMap()
+	go CheckPresence("", "")
 	//SendTestMessage(api, "#teacher-test", "Here to help...")
 	//EventChannel = make(chan Event)
 }
@@ -28,6 +32,11 @@ func GetSlackBotClient() *slack.Client {
 	return api
 }
 */
+
+func InitializeTeamDemoMap() {
+	TeamDemoMap = make(map[string]bool)
+	TeamDemoMap["T577ZGT6J"] = true
+}
 
 func PostAnonymousQuestion(messageText, teamID string) {
 	team := GetTeam(teamID)
