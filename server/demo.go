@@ -11,15 +11,15 @@ import (
 //Welcome to Slack ?
 
 // Install teachbot to team
-// registerAll
+// registerAll function called by user, to register everyone
 // Same username and password
-// create field-trips channel --> can be automated
 // add teach bot to midterm
 
 // Create Google Drive & Link for Homework
 // allow google drive to import file
 
 //Add Team to DemoTeams map
+
 var teamIDtoTS map[string]string
 var teamIDtoChannelID map[string]string
 var teamIDtoMessage map[string]string

@@ -378,7 +378,7 @@ func OAuth(w http.ResponseWriter, r *http.Request) {
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 
-	GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https://ae29cdbc.ngrok.io/oauth")
+	GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https://teach-bot-api.com/oauth")
 
 	//fmt.Println(scope)
 	//os.Setenv("SLACK_TOKEN", accessToken)
