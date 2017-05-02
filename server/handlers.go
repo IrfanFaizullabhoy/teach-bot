@@ -448,7 +448,6 @@ func Interactive(w http.ResponseWriter, r *http.Request) {
 	}
 
 	//fmt.Println(attachmentActionCallback)
-
 }
 
 // GetOAuthToken retrieves an AccessToken
@@ -463,6 +462,9 @@ func GetOAuthToken(clientID, clientSecret, code, redirectURI string) (accessToke
 	team.Token = response.AccessToken
 	team.BotToken = response.Bot.BotAccessToken
 	team.BotID = response.Bot.BotUserID
+	if IsDemoTeam(team.TeamID) {
+		InitializeDemo(team.TeamID)
+	}
 	db.Create(&team)
 	fmt.Println(response.Scope)
 	//fmt.Println("bot token is:" + response.Bot.BotAccessToken + " " + response.Bot.BotUserID)

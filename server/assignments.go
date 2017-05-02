@@ -31,7 +31,7 @@ func DownloadAssignment(fileSharedEvent Event, teamID string) {
 
 	//DEMO
 	if IsDemoTeam(teamID) {
-		DemoDownloadAssignment(fileSharedEvent, teamID)
+		go DemoDownloadAssignment(fileSharedEvent, teamID)
 		return
 	}
 
