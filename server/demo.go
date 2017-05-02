@@ -11,6 +11,7 @@ import (
 //Welcome to Slack ?
 
 // Install teachbot to team
+// Get Team ID and add it to list of demo teams
 // registerAll function called by user, to register everyone
 // Same username and password
 // add teach bot to midterm
@@ -36,8 +37,8 @@ func IsDemoTeam(teamID string) bool {
 }
 
 func InitializeDemoMaps() {
-
-	DemoTeamIDs := []string{"T577ZGT6J"}
+	// new-student , hcp-test1 ,
+	DemoTeamIDs := []string{"T577ZGT6J", "T5832VAGN"}
 	TeamDemoMap = make(map[string]bool)
 	for _, team := range DemoTeamIDs {
 		TeamDemoMap[team] = true
