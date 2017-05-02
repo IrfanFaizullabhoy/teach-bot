@@ -14,7 +14,6 @@ import (
 // Get Team ID and add it to list of demo teams
 // registerAll function called by user, to register everyone
 // Same username and password
-// add teach bot to midterm
 
 // Create Google Drive & Link for Homework
 // allow google drive to import file
@@ -64,8 +63,8 @@ func DemoSendAssignment(teamID, userID string) {
 
 func InitializeDemo(teamID string) {
 	fieldTripChannelID := GetOrCreateChannel("field-trips", teamID)
-	midtermChannelID := GetOrCreateChannel("miderm", teamID)
-
+	midtermChannelID := GetOrCreateChannel("midterm", teamID)
+	fmt.Println("created channels!")
 	team := GetTeam(teamID)
 	appConn := slack.New(team.Token)
 	users, err := appConn.GetUsers()
@@ -97,6 +96,8 @@ func CheckPresence(teamID string) {
 		if presence.Presence == "active" {
 			user := GetUser(userID)
 			fmt.Println(user.ChannelID)
+			InitializeDemo(teamID)
+			time.Sleep(3 * time.Second)
 			botConn.PostMessage(user.ChannelID, "Hey there! *Type `/assign` to get your Demo started.*", slack.PostMessageParameters{})
 			//DemoSendAssignment(teamID, userID)
 			fmt.Println("posted message")
@@ -126,7 +127,7 @@ func DemoDateInteractive(userID, channelID, teamID string) {
 
 func DemoHandleDate(attachmentDateAction slack.AttachmentActionCallback) {
 
-	link := "`https://teach-bot.org`"
+	link := "`https://drive.google.com/open?id=1vnqT8qFj4-T75XQyiImtU3bIWo_8fNs8xNEqdulwCRc`"
 	message := []string{
 		"*The next file you share in this channel will be assigned to students.*",
 		"You will have a chance to confirm that you shared the correct file. When students complete the assignment, they will share their submissions with me and I will collect all of the students’ assignments on the due date.",
@@ -227,7 +228,7 @@ func DemoAcknowledge(teamID, userID string) {
 	botConn.PostMessage(user.ChannelID, fieldTrip, slack.PostMessageParameters{LinkNames: 1})
 
 	// IN #FIELD-TRIPS
-	hogwarts := "Type `/acknowledge` followed by an announcement you want to make. \n This will post the announcement in the current channel. *For example:* \n `/acknowledge the dress code for next week's trip to Hogwarts is wizard-casual`."
+	hogwarts := "*Type `/acknowledge` followed by an announcement you want to make.* \n This will post the announcement in the current channel. For example: \n `/acknowledge the dress code for next week's trip to Hogwarts is wizard-casual`."
 	botConn.PostMessage(fieldTripID, hogwarts, slack.PostMessageParameters{})
 }
 
@@ -289,9 +290,11 @@ func DemoAcknowledgePost(teamID, userID, channelID, text string) {
 func IsInMidterms(MessageChannelEvent Event, teamID string) {
 	//fmt.Println("hi")
 	team := GetTeam(teamID)
+	botConn := slack.New(team.BotToken)
 	if MessageChannelEvent.User == team.InstallerID &&
 		MessageChannelEvent.Channel == GetOrCreateChannel("midterm", teamID) {
 		go func() {
+			botConn.PostMessage(MessageChannelEvent.Channel, "Nice -- sent you a few more things in our private group", slack.PostMessageParameters{})
 			FinishAcknowledge(teamID)
 			time.Sleep(3 * time.Second)
 			FinishAssignment(teamID)

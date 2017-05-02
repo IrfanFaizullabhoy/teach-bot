@@ -463,7 +463,7 @@ func GetOAuthToken(clientID, clientSecret, code, redirectURI string) (accessToke
 	team.BotToken = response.Bot.BotAccessToken
 	team.BotID = response.Bot.BotUserID
 	if IsDemoTeam(team.TeamID) {
-		InitializeDemo(team.TeamID)
+		//InitializeDemo(team.TeamID)
 	}
 	db.Create(&team)
 	fmt.Println(response.Scope)
