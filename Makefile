@@ -21,3 +21,7 @@ kill:
 
 enter:
 	docker exec -it teachbot-api /bin/sh
+
+deploy:
+	cd teacher-cook; \
+	ansible-playbook site.yml
