@@ -1,14 +1,10 @@
 package main
 
 import (
-	"errors"
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 	"github.com/nlopes/slack"
-	//"os"
 	"fmt"
-	//"net/http"
-	"strings"
 )
 
 var StudentMap map[string]User
