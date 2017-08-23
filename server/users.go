@@ -21,33 +21,11 @@ func RegisterAll(team Team) {
 	}
 }
 
-func ParseStudentName(userInput string) (string, string, error) {
-	names := strings.Split(userInput, " ")
-	if len(names) == 3 &&
-		strings.ToLower(names[0]) == "register" {
-		return names[1], names[2], nil
-	} else {
-		return "", "", errors.New("Did not input 3 items")
-	}
-}
-
-func ParseTeacherName(userInput string) (string, string, error) {
-	names := strings.Split(userInput, " ")
-	if len(names) == 4 &&
-		strings.ToLower(names[0]) == "register" &&
-		strings.ToLower(names[1]) == "teacher" {
-		return names[2], names[3], nil
-	} else {
-		return "", "", errors.New("Did not input 4 items")
-	}
-}
-
 func CreateUser(user User, db *gorm.DB) {
 	if db.NewRecord(&user) {
 		db.Create(&user)
 	} else {
 		fmt.Println("error, primary key already exists for user")
-		//format.errorf
 	}
 }
 
@@ -220,7 +198,6 @@ func AddToDatabase(StudentOrTeacherAction slack.AttachmentActionCallback) {
 func GetInstructors(teamID string) []User {
 	var teachers []User
 	db.Where("role = ? AND team_id = ?", "teacher", teamID).Find(&teachers)
-	//instructors := []string{"U3YKBAK1S", "U42EVJF7E", "U3YK6EPV0"}
 	return teachers
 }
 
@@ -265,14 +242,4 @@ func GetTeam(id string) Team {
 		TeamMap[id] = dbTeam
 	}
 	return dbTeam
-}
-
-func isTeacher(userID string) bool {
-	var dbUser User
-	db.Where("user_id = ?", userID).First(&dbUser)
-	if dbUser.Role == "teacher" {
-		return true
-	} else {
-		return false
-	}
 }

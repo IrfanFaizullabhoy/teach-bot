@@ -41,12 +41,7 @@ func Instructors(w http.ResponseWriter, r *http.Request) {
 
 func RegisterEveryone(w http.ResponseWriter, r *http.Request) {
 	var slashPayload SlashPayload
-
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	err := r.ParseForm()
 	check(err)
@@ -71,10 +66,6 @@ func RegisterEveryone(w http.ResponseWriter, r *http.Request) {
 
 func EnterGrades(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	var manualGrade ManualGrade
 
@@ -192,17 +183,8 @@ func Acknowledge(w http.ResponseWriter, r *http.Request) {
 	params.Attachments = append(params.Attachments, attachment)
 	channelID, ts, _ := botConn.PostMessage(slashPayload.ChannelID, slashPayload.Text+" - @"+slashPayload.UserName, params)
 	acknowledgeMsg := AcknowledgeMessage{UserID: slashPayload.UserID, Timestamp: ts, ChannelID: channelID}
-	db.Create(&acknowledgeMsg)
-
-	/*
-		params1 := slack.PostMessageParameters{}
-		attachment1 := slack.Attachment{CallbackID: "remind", Fallback: "remind service not working properly"}
-		attachment1.Actions = append(attachment1.Actions, slack.AttachmentAction{Name: "remind", Text: "Remind", Type: "button"})
-		params1.Attachments = append(params1.Attachments, attachment1)
-		api.PostMessage(GetUser(slashPayload.UserID).ChannelID, "Click the `Remind` Button to remind your friends about the following announcement ```"+acknowledgeMsg.Text+"```", params1)
-	*/
-
 	acknowledgeAction := AcknowledgeAction{AckID: acknowledgeMsg.ID, UserID: slashPayload.UserID, TeamID: team.TeamID, Value: ""}
+	db.Create(&acknowledgeMsg)
 	db.Create(&acknowledgeAction)
 
 	w.WriteHeader(http.StatusOK)
@@ -210,7 +192,6 @@ func Acknowledge(w http.ResponseWriter, r *http.Request) {
 
 // Handles an SSL Check for slash command
 func SSLCheck(w http.ResponseWriter, r *http.Request) {
-
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(403) // unprocessable entity
 }
@@ -218,7 +199,6 @@ func SSLCheck(w http.ResponseWriter, r *http.Request) {
 // EVENTS API
 // Handles event listening and routes further to other actions
 func Events(w http.ResponseWriter, r *http.Request) {
-
 	var event OuterEvent
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
@@ -232,8 +212,6 @@ func Events(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	fmt.Println(event.Event.Type)
-
 	switch event.Type {
 	case "url_verification":
 		w.WriteHeader(http.StatusOK)
@@ -242,9 +220,9 @@ func Events(w http.ResponseWriter, r *http.Request) {
 		}
 	case "event_callback":
 		switch event.Event.Type {
-		case "file_shared": //files:read
+		case "file_shared": //PERMISSION SCOPE files:read
 			HandleFileShared(event.Event, event.TeamID)
-		case "team_join": //users:read
+		case "team_join": //PERMISSION SCOPE users:read
 			WelcomeToTeam(event.Event, event.TeamID)
 		case "message":
 			IsInMidterms(event.Event, event.TeamID)

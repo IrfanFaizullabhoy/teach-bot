@@ -14,7 +14,6 @@ var db *gorm.DB
 
 func main() {
 	router := NewRouter()
-	//time.Sleep(time.Second * 10)
 	fmt.Println("starting to connect to DB...")
 	db = ConnectToRDS()
 	fmt.Println("intermediate check")
