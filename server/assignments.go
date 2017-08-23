@@ -13,9 +13,6 @@ import (
 	"github.com/nlopes/slack"
 )
 
-func GrabAssignMessage(channelID, userID string) {
-
-}
 
 func HandleFileShared(fileSharedEvent Event, teamID string) {
 	if true {
@@ -25,7 +22,6 @@ func HandleFileShared(fileSharedEvent Event, teamID string) {
 	}
 }
 
-// ELSE RANDOM ASSIGNMENT [make sure its not to assign or collect]
 func DownloadAssignment(fileSharedEvent Event, teamID string) {
 	team := GetTeam(teamID)
 

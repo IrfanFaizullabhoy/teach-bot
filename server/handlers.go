@@ -20,17 +20,6 @@ func Instructors(w http.ResponseWriter, r *http.Request) {
 	var slashPayload SlashPayload
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
-
 	err := r.ParseForm()
 	check(err)
 	decoder := schema.NewDecoder()
@@ -50,22 +39,10 @@ func Instructors(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 }
 
-func ThisWay(w http.ResponseWriter, r *http.Request) {
-	w.Header().Set("Content-Disposition", "attachment; filename=thisway.mobileconfig")
-	w.Header().Set("Content-Type", "application/x-apple-aspen-config")
-	http.ServeFile(w, r, "../this-way.mobileconfig")
-}
-
 func RegisterEveryone(w http.ResponseWriter, r *http.Request) {
 	var slashPayload SlashPayload
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
 	// Stop here if its Preflighted OPTIONS request
 	if r.Method == "OPTIONS" {
 		return
@@ -94,12 +71,6 @@ func RegisterEveryone(w http.ResponseWriter, r *http.Request) {
 
 func EnterGrades(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
 	// Stop here if its Preflighted OPTIONS request
 	if r.Method == "OPTIONS" {
 		return
@@ -126,16 +97,6 @@ func GetGrades(w http.ResponseWriter, r *http.Request) {
 
 	var slashPayload SlashPayload
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	err := r.ParseForm()
 	check(err)
@@ -158,20 +119,8 @@ func GetGrades(w http.ResponseWriter, r *http.Request) {
 }
 
 func AnonymousQuestion(w http.ResponseWriter, r *http.Request) {
-
 	var slashPayload SlashPayload
-
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	err := r.ParseForm()
 	check(err)
@@ -209,16 +158,6 @@ func Acknowledge(w http.ResponseWriter, r *http.Request) {
 	var slashPayload SlashPayload
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	err := r.ParseForm()
 	check(err)
@@ -273,14 +212,6 @@ func Acknowledge(w http.ResponseWriter, r *http.Request) {
 func SSLCheck(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-
-	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
 	w.WriteHeader(403) // unprocessable entity
 }
 
@@ -291,18 +222,6 @@ func Events(w http.ResponseWriter, r *http.Request) {
 	var event OuterEvent
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
-	fmt.Println("in events")
-
 	body, err := ioutil.ReadAll(r.Body)
 	check(err)
 	if err = json.Unmarshal(body, &event); err != nil {
@@ -340,16 +259,6 @@ func Assign(w http.ResponseWriter, r *http.Request) {
 	var slashPayload SlashPayload
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	err := r.ParseForm()
 	check(err)
@@ -364,52 +273,23 @@ func Assign(w http.ResponseWriter, r *http.Request) {
 func OAuth(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	code := r.URL.Query().Get("code")
 	state := r.URL.Query().Get("state")
 
 	GetOAuthToken("135270668007.135692085812", "5bc0dc4bba1567dbf09015375cfbd373", code, "https://teach-bot-api.com/oauth")
-
-	//fmt.Println(scope)
-	//os.Setenv("SLACK_TOKEN", accessToken)
-	//check(err)
-	//fmt.Println("set the slack token to " + accessToken)
 	fmt.Println("code is" + code)
 	fmt.Println(state)
-	// if state != remembered state
+
 	w.WriteHeader(http.StatusOK)
-	//if err := json.NewEncoder(w).Encode(); err != nil {
-	//	panic(err)
-	//}
 }
 
 //INTERACTIVE MESSAGES
 
 func Interactive(w http.ResponseWriter, r *http.Request) {
-	//api := GetSlackClient()
 	var actionResponse ActionResponse
 
 	w.Header().Set("Content-Type", "application/json; charset=UTF-8")
-	if origin := r.Header.Get("Origin"); origin != "" {
-		w.Header().Set("Access-Control-Allow-Origin", origin)
-		w.Header().Set("Access-Control-Allow-Methods", "POST, GET, OPTIONS, PUT, DELETE")
-		w.Header().Set("Access-Control-Allow-Headers",
-			"Accept, Content-Type, Content-Length, Accept-Encoding, X-CSRF-Token, Authorization")
-	}
-	// Stop here if its Preflighted OPTIONS request
-	if r.Method == "OPTIONS" {
-		return
-	}
 
 	err := r.ParseForm()
 	check(err)
@@ -443,11 +323,7 @@ func Interactive(w http.ResponseWriter, r *http.Request) {
 		botConn.PostMessage(attachmentActionCallback.Channel.ID, "Got it -- I'll let them know", slack.PostMessageParameters{})
 	case "submission_type":
 		DemoHandleViewSubmission(attachmentActionCallback)
-		//case "remind":
-		//	RemindCallback(attachmentActionCallback)
 	}
-
-	//fmt.Println(attachmentActionCallback)
 }
 
 // GetOAuthToken retrieves an AccessToken
@@ -467,7 +343,6 @@ func GetOAuthToken(clientID, clientSecret, code, redirectURI string) (accessToke
 	}
 	db.Create(&team)
 	fmt.Println(response.Scope)
-	//fmt.Println("bot token is:" + response.Bot.BotAccessToken + " " + response.Bot.BotUserID)
 	return response.AccessToken, response.Scope, nil
 }
 
