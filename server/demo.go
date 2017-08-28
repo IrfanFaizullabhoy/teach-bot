@@ -41,7 +41,7 @@ func InitializeDemoMaps() {
 	TeamDemoMap = make(map[string]bool)
 	for _, team := range DemoTeamIDs {
 		TeamDemoMap[team] = true
-		go CheckPresence(team)
+		//go CheckPresence(team)
 	}
 
 	teamIDtoTS = make(map[string]string)

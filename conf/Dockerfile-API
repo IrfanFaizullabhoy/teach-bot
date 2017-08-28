@@ -4,6 +4,7 @@ COPY . $GOPATH/src/github.com/IrfanFaizullabhoy/teacher
 
 WORKDIR $GOPATH/src/github.com/IrfanFaizullabhoy/teacher/server
 
+RUN source ../.env
 RUN go build
 
 ENTRYPOINT /bin/sh

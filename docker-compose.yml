@@ -32,5 +32,4 @@ services:
       - DB_PASS=teachpass
       - DB_SERVICE=db
       - DB_PORT=5432
-      - SLACK_TOKEN=xoxb-136568950452-8X180knozh1mI8hYPXqzYDZR
     restart: always
