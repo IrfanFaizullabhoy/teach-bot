@@ -1,4 +1,4 @@
-# techla-cook
+# teacher-cook
 
 1. Add all required private keys to `/private` folder in the `teach cook` directory.
 
